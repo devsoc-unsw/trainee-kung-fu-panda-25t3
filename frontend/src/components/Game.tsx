@@ -1,6 +1,219 @@
+import { useState, useEffect, useRef } from 'react';
+
+type HitObject = {
+  x: number;
+  y: number;
+  time: number;
+  type: number;
+  hitSound: number;
+};
+
+type SongInfo = Record<string, string | number>;
+
+type UserData = {
+  Keybinds: Record<string, string[]>;
+  ManiaWidth: Record<string, string>;
+  ManiaHeight: Record<string, string>;
+};
+
 const Game = () => {  
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [, setHitObjects] = useState<HitObject[]>([]); // this and below should be parsed into a file later on
+  const [songInfo, setSongInfo] = useState<SongInfo>({});
+  const [, setUserData] = useState<UserData>({ Keybinds: {}, ManiaWidth: {}, ManiaHeight: {} }); // query from local storage first otherwise set defults
+  const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
+  const musicTime = useRef<HTMLAudioElement | null>(null);
+  const mapPath = './beatmapsRaw/200552/'; // turn reading files into its own component later
+
+  useEffect(() => {
+    const theMap = mapPath + 'BlackYooh vs. siromaru - BLACK or WHITE (DE-CADE) [ADVANCED Lv.12].osu';
+    const loadHitObjects = async () => {
+      const file = await fetch(theMap);
+      const fileString = await file.text();
+      setHitObjects(getHitObjects(fileString));
+      setSongInfo(getSongInfo(fileString));
+    };
+
+    loadHitObjects();
+
+    setUserData({
+      Keybinds: {'4': ['d', 'f', 'j', 'k']},
+      ManiaWidth: {'4': '120'},
+      ManiaHeight: {'4': '30'}
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      setPressedKeys(prev => new Set(prev).add(event.key));
+      console.log(`Key DOWN: ${event.key} at ${musicTime.current ? musicTime.current.currentTime * 1000 : 0}ms`);
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      setPressedKeys(prev => {
+        const newKeys = new Set(prev);
+        newKeys.delete(event.key);
+        console.log(`Key UP: ${event.key} at ${musicTime.current ? musicTime.current.currentTime * 1000 : 0}ms`);
+        return newKeys;
+      });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  const getHitObjects = (fileString: string): HitObject[] => {
+    const lines = fileString.split('\n');
+    const hitObjects: HitObject[] = [];
+    let inSection = false;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      if (trimmed === '[HitObjects]') {
+        inSection = true;
+        continue;
+      }
+
+      if (inSection) {
+        if (trimmed.startsWith('[')) break;
+
+        if (trimmed && !trimmed.startsWith('//')) {
+          const parts = trimmed.split(',');
+          if (parts.length >= 4) {
+            hitObjects.push({
+              x: parseInt(parts[0]),
+              y: parseInt(parts[1]),
+              time: parseInt(parts[2]),
+              type: parseInt(parts[3]),
+              hitSound: parseInt(parts[4])
+            });
+          }
+        }
+      }
+    }
+
+    return hitObjects;
+  };
+
+  const getSongInfo = (fileString: string): SongInfo => {
+    const lines = fileString.split('\n');
+    const songInfo: SongInfo = {};
+
+    const wantedKeys = {
+      general: ['AudioFilename', 'AudioLeadIn', 'PreviewTime', 'Mode'],
+      metadata: ['TitleUnicode', 'ArtistUnicode', 'Creator', 'Version', 'BeatmapID'],
+      difficulty: ['CircleSize', 'ApproachRate']
+    };
+    
+    let currentSection = '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        currentSection = trimmed.slice(1, -1);
+        continue;
+      }
+
+      if (!trimmed || trimmed.startsWith('//')) {
+        continue;
+      }
+
+      if (currentSection === 'General') {
+        const parts = trimmed.split(':');
+        if (parts.length >= 2) {
+          const key = parts[0].trim();
+          const value = parts.slice(1).join(':').trim();
+          
+          if (wantedKeys.general.includes(key)) {
+            songInfo[key] = value;
+          }
+        }
+      }
+
+      else if (currentSection === 'Metadata') {
+        const parts = trimmed.split(':');
+        if (parts.length >= 2) {
+          const key = parts[0].trim();
+          const value = parts.slice(1).join(':').trim();
+          
+          if (wantedKeys.metadata.includes(key)) {
+            songInfo[key] = value;
+          }
+        }
+      }
+
+      else if (currentSection === 'Difficulty') {
+        const parts = trimmed.split(':');
+        if (parts.length >= 2) {
+          const key = parts[0].trim();
+          const value = parts.slice(1).join(':').trim();
+          
+          if (wantedKeys.difficulty.includes(key)) {
+            songInfo[key] = value;
+          }
+        }
+      }
+
+      else if (currentSection === 'Events') {
+        if (trimmed.startsWith('0,0,')) {
+          const parts = trimmed.split(',');
+          let filename = parts[2].trim();
+
+          if (filename.startsWith('"') && filename.endsWith('"')) {
+            filename = filename.slice(1, -1);
+          }
+
+          songInfo['BackgroundFilename'] = filename;
+          songInfo['BackgroundXOffset'] = parseInt(parts[3]);
+          songInfo['BackgroundYOffset'] = parseInt(parts[4]);
+        }
+      }
+    }
+
+    return songInfo;
+  };
+
+  const timeUpdate = () => {
+    if (musicTime.current) {
+      setCurrentTime(musicTime.current.currentTime * 1000);
+    }
+  };
+/*
+  const getColumn = (xValue) => {
+    return Math.floor(xValue * songInfo['CircleSize'] / 512) // clamped between 0 and columnCount - 1
+  }
+*/
+
   return (
     <>
+      <audio
+        ref={musicTime}
+        src={mapPath + songInfo['AudioFilename']}
+        onTimeUpdate={timeUpdate}
+        autoPlay
+        controls
+      />
+
+      <h1>hi</h1>
+
+      <div>
+        Current Time: {currentTime}ms
+      </div>
+
+      <div>
+        <p>Currently pressed keys: {Array.from(pressedKeys).join(', ') || 'None'}</p>
+        <p>Number of keys pressed: {pressedKeys.size}</p>
+      </div>
+
+
+
       <main className="flex justify-center items-center w-screen h-screen text-[#FFFFFF]">
         <span className="text-3xl">Game</span>
       </main>
