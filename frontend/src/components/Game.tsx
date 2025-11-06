@@ -1,13 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 
-type HitObject = {
-  x: number;
-  y: number;
-  time: number;
-  type: number;
-  hitSound: number;
-};
-
 type SongInfo = Record<string, string | number>;
 
 type UserData = {
@@ -16,35 +8,19 @@ type UserData = {
   ManiaHeight: Record<string, string>;
 };
 
-const Game = () => {  
+type GameProps = {
+  songInfo: SongInfo;
+  userData: UserData;
+  mapPath: string;
+};
+
+const Game = ({ songInfo, userData, mapPath }: GameProps) => {  
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const [, setHitObjects] = useState<HitObject[]>([]); // this and below should be parsed into a file later on
-  const [songInfo, setSongInfo] = useState<SongInfo>({});
-  const [, setUserData] = useState<UserData>({ Keybinds: {}, ManiaWidth: {}, ManiaHeight: {} }); // query from local storage first otherwise set defults
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
   const musicTime = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const rectangleX = useRef<number>(0); // tmp just for testing
-  const mapPath = './beatmapsRaw/200552/'; // turn reading files into its own component later
-
-  useEffect(() => {
-    const theMap = mapPath + 'BlackYooh vs. siromaru - BLACK or WHITE (DE-CADE) [ADVANCED Lv.12].osu';
-    const loadHitObjects = async () => {
-      const file = await fetch(theMap);
-      const fileString = await file.text();
-      setHitObjects(getHitObjects(fileString));
-      setSongInfo(getSongInfo(fileString));
-    };
-
-    loadHitObjects();
-
-    setUserData({
-      Keybinds: {'4': ['d', 'f', 'j', 'k']},
-      ManiaWidth: {'4': '120'},
-      ManiaHeight: {'4': '30'}
-    });
-  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -77,7 +53,11 @@ const Game = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width = 727;
+    const circleSize = songInfo['CircleSize'];
+    const maniaWidthKey = String(circleSize);
+    const maniaWidth = userData.ManiaWidth[maniaWidthKey];
+    
+    canvas.width = parseInt(maniaWidth) * parseInt(String(circleSize));
     canvas.height = window.innerHeight;
 
     const rectangleWidth = 50;
@@ -106,120 +86,7 @@ const Game = () => {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, []);
-
-  const getHitObjects = (fileString: string): HitObject[] => {
-    const lines = fileString.split('\n');
-    const hitObjects: HitObject[] = [];
-    let inSection = false;
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-
-      if (trimmed === '[HitObjects]') {
-        inSection = true;
-        continue;
-      }
-
-      if (inSection) {
-        if (trimmed.startsWith('[')) break;
-
-        if (trimmed && !trimmed.startsWith('//')) {
-          const parts = trimmed.split(',');
-          if (parts.length >= 4) {
-            hitObjects.push({
-              x: parseInt(parts[0]),
-              y: parseInt(parts[1]),
-              time: parseInt(parts[2]),
-              type: parseInt(parts[3]),
-              hitSound: parseInt(parts[4])
-            });
-          }
-        }
-      }
-    }
-
-    return hitObjects;
-  };
-
-  const getSongInfo = (fileString: string): SongInfo => {
-    const lines = fileString.split('\n');
-    const songInfo: SongInfo = {};
-
-    const wantedKeys = {
-      general: ['AudioFilename', 'AudioLeadIn', 'PreviewTime', 'Mode'],
-      metadata: ['TitleUnicode', 'ArtistUnicode', 'Creator', 'Version', 'BeatmapID'],
-      difficulty: ['CircleSize', 'ApproachRate']
-    };
-    
-    let currentSection = '';
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-
-      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-        currentSection = trimmed.slice(1, -1);
-        continue;
-      }
-
-      if (!trimmed || trimmed.startsWith('//')) {
-        continue;
-      }
-
-      if (currentSection === 'General') {
-        const parts = trimmed.split(':');
-        if (parts.length >= 2) {
-          const key = parts[0].trim();
-          const value = parts.slice(1).join(':').trim();
-          
-          if (wantedKeys.general.includes(key)) {
-            songInfo[key] = value;
-          }
-        }
-      }
-
-      else if (currentSection === 'Metadata') {
-        const parts = trimmed.split(':');
-        if (parts.length >= 2) {
-          const key = parts[0].trim();
-          const value = parts.slice(1).join(':').trim();
-          
-          if (wantedKeys.metadata.includes(key)) {
-            songInfo[key] = value;
-          }
-        }
-      }
-
-      else if (currentSection === 'Difficulty') {
-        const parts = trimmed.split(':');
-        if (parts.length >= 2) {
-          const key = parts[0].trim();
-          const value = parts.slice(1).join(':').trim();
-          
-          if (wantedKeys.difficulty.includes(key)) {
-            songInfo[key] = value;
-          }
-        }
-      }
-
-      else if (currentSection === 'Events') {
-        if (trimmed.startsWith('0,0,')) {
-          const parts = trimmed.split(',');
-          let filename = parts[2].trim();
-
-          if (filename.startsWith('"') && filename.endsWith('"')) {
-            filename = filename.slice(1, -1);
-          }
-
-          songInfo['BackgroundFilename'] = filename;
-          songInfo['BackgroundXOffset'] = parseInt(parts[3]);
-          songInfo['BackgroundYOffset'] = parseInt(parts[4]);
-        }
-      }
-    }
-
-    return songInfo;
-  };
+  }, [songInfo, userData]);
 
   const timeUpdate = () => {
     if (musicTime.current) {
