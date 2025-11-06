@@ -67,6 +67,10 @@ const Game = ({ songInfo, userData, mapPath }: GameProps) => {
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      if (musicTime.current) {
+        setCurrentTime(musicTime.current.currentTime * 1000);
+      }
+
       rectangleX.current += speed;
 
       if (rectangleX.current > canvas.width) {
@@ -88,11 +92,6 @@ const Game = ({ songInfo, userData, mapPath }: GameProps) => {
     };
   }, [songInfo, userData]);
 
-  const timeUpdate = () => {
-    if (musicTime.current) {
-      setCurrentTime(musicTime.current.currentTime * 1000);
-    }
-  };
 /*
   const getColumn = (xValue) => {
     return Math.floor(xValue * songInfo['CircleSize'] / 512) // clamped between 0 and columnCount - 1
@@ -104,7 +103,6 @@ const Game = ({ songInfo, userData, mapPath }: GameProps) => {
       <audio
         ref={musicTime}
         src={mapPath + songInfo['AudioFilename']}
-        onTimeUpdate={timeUpdate}
         autoPlay
         controls
       />
