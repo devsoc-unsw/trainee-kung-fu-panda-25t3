@@ -23,6 +23,9 @@ const Game = () => {
   const [, setUserData] = useState<UserData>({ Keybinds: {}, ManiaWidth: {}, ManiaHeight: {} }); // query from local storage first otherwise set defults
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
   const musicTime = useRef<HTMLAudioElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const rectangleX = useRef<number>(0); // tmp just for testing
   const mapPath = './beatmapsRaw/200552/'; // turn reading files into its own component later
 
   useEffect(() => {
@@ -64,6 +67,44 @@ const Game = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = 727;
+    canvas.height = window.innerHeight;
+
+    const rectangleWidth = 50;
+    const rectangleHeight = 50;
+    const speed = 10;
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      rectangleX.current += speed;
+
+      if (rectangleX.current > canvas.width) {
+        rectangleX.current = -rectangleWidth;
+      }
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(rectangleX.current, canvas.height / 2 - rectangleHeight / 2, rectangleWidth, rectangleHeight);
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, []);
 
@@ -215,7 +256,10 @@ const Game = () => {
 
 
       <main className="flex justify-center items-center w-screen h-screen text-[#FFFFFF]">
-        <span className="text-3xl">Game</span>
+        <canvas
+          ref={canvasRef}
+          className="bg-black"
+        />
       </main>
     </>
   )
