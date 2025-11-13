@@ -21,6 +21,8 @@ type UserData = {
   BackgroundOpacity: number;
   Accuracy: Record<string, number>;
   Life: Record<string, number>;
+  Judgment: string;
+  MusicSpeed: number;
   JudgementWindow: Record<
     string,
     {
@@ -28,7 +30,7 @@ type UserData = {
       Perfect: number;
       Great: number;
       Good: number;
-      Bad: number;
+      Okay: number;
       Miss: number;
     }
   >;
@@ -59,7 +61,7 @@ const PlayerLoader = ({ songInfo, hitObjects, mapPath }: PlayerLoaderProps) => {
           Perfect: 57,
           Great: 101,
           Good: 141,
-          Bad: 169,
+          Okay: 169,
           Miss: 218,
         },
         Lenient: {
@@ -67,7 +69,7 @@ const PlayerLoader = ({ songInfo, hitObjects, mapPath }: PlayerLoaderProps) => {
           Perfect: 52,
           Great: 91,
           Good: 128,
-          Bad: 153,
+          Okay: 153,
           Miss: 198,
         },
         Chill: {
@@ -75,7 +77,7 @@ const PlayerLoader = ({ songInfo, hitObjects, mapPath }: PlayerLoaderProps) => {
           Perfect: 47,
           Great: 83,
           Good: 116,
-          Bad: 139,
+          Okay: 139,
           Miss: 180,
         },
         Standard: {
@@ -83,7 +85,7 @@ const PlayerLoader = ({ songInfo, hitObjects, mapPath }: PlayerLoaderProps) => {
           Perfect: 43,
           Great: 76,
           Good: 106,
-          Bad: 127,
+          Okay: 127,
           Miss: 164,
         },
         Strict: {
@@ -91,7 +93,7 @@ const PlayerLoader = ({ songInfo, hitObjects, mapPath }: PlayerLoaderProps) => {
           Perfect: 39,
           Great: 69,
           Good: 96,
-          Bad: 115,
+          Okay: 115,
           Miss: 164,
         },
         Tough: {
@@ -99,7 +101,7 @@ const PlayerLoader = ({ songInfo, hitObjects, mapPath }: PlayerLoaderProps) => {
           Perfect: 35,
           Great: 62,
           Good: 87,
-          Bad: 100,
+          Okay: 100,
           Miss: 164,
         },
         Extreme: {
@@ -107,7 +109,7 @@ const PlayerLoader = ({ songInfo, hitObjects, mapPath }: PlayerLoaderProps) => {
           Perfect: 32,
           Great: 57,
           Good: 79,
-          Bad: 94,
+          Okay: 94,
           Miss: 164,
         },
         Impossible: {
@@ -115,12 +117,14 @@ const PlayerLoader = ({ songInfo, hitObjects, mapPath }: PlayerLoaderProps) => {
           Perfect: 20,
           Great: 35,
           Good: 49,
-          Bad: 69,
+          Okay: 69,
           Miss: 164,
         },
       },
-      Accuracy: {'Marvelous': 100, 'Perfect': 98.5, 'Great': 65, 'Good': 25, 'Bad': -50, 'Miss': -100},
-      Life: {'Marvelous': 0.8, 'Perfect': 0.8, 'Great': 0.4, 'Good': 0, 'Bad': -0.4, 'Miss': -0.8},
+      Accuracy: {'Marvelous': 100, 'Perfect': 98.25, 'Great': 65, 'Good': 25, 'Okay': -50, 'Miss': -100},
+      Life: {'Marvelous': 0.8, 'Perfect': 0.8, 'Great': 0.4, 'Good': 0, 'Okay': -0.4, 'Miss': -0.8},
+      Judgment: 'Standard',
+      MusicSpeed: 1,
     });
   }, []);
 

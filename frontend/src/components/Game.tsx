@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 type SongInfo = Record<string, string | number>;
 
@@ -10,6 +10,8 @@ type HitObject = {
   hitSound: number;
 };
 
+type JudgementName = 'Marvelous' | 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss';
+
 type UserData = {
   Keybinds: Record<string, string[]>;
   ManiaWidth: Record<string, string>;
@@ -20,16 +22,11 @@ type UserData = {
   BackgroundOpacity: number;
   Accuracy: Record<string, number>;
   Life: Record<string, number>;
+  Judgment: string;
+  MusicSpeed: number;
   JudgementWindow: Record<
     string,
-    {
-      Marvelous: number;
-      Perfect: number;
-      Great: number;
-      Good: number;
-      Bad: number;
-      Miss: number;
-    }
+    Record<JudgementName, number>
   >;
 };
 
@@ -40,9 +37,20 @@ type GameProps = {
   hitObjects: HitObject[];
 };
 
+const judgementTypes: JudgementName[] = ['Marvelous', 'Perfect', 'Great', 'Good', 'Okay', 'Miss'];
+
 const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {  
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
+  const [judgementCounts, setJudgementCounts] = useState<Record<JudgementName, number>>({
+    Marvelous: 0,
+    Perfect: 0,
+    Great: 0,
+    Good: 0,
+    Okay: 0,
+    Miss: 0,
+  });
+  const [lastJudgement, setLastJudgement] = useState<{ type: JudgementName; diff: number } | null>(null);
   const musicTime = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -52,18 +60,137 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
   const lastRafTimeRef = useRef<number>(0);
   const precomputedColumnsRef = useRef<number[] | null>(null);
   const sortedTimesRef = useRef<number[] | null>(null);
+  const judgedNotesRef = useRef<boolean[]>([]);
+
+  const activeJudgementWindow = userData.JudgementWindow[userData.Judgment];
+
+  const totalJudgements = judgementTypes.reduce(
+    (sum, type) => sum + judgementCounts[type],
+    0,
+  );
+  const weightedSum = judgementTypes.reduce((sum, type) => {
+    const weight = userData.Accuracy[type];
+    return sum + weight * judgementCounts[type];
+  }, 0);
+  const rawAccuracy = totalJudgements === 0 ? 100 : weightedSum / totalJudgements;
+  const displayAccuracy = Math.min(100, Math.max(0, rawAccuracy));
+
+  const judgeHit = useCallback((column: number) => {
+    const windowConfig = activeJudgementWindow;
+    if (!windowConfig) {
+      return;
+    }
+
+    const times = sortedTimesRef.current;
+    const columns = precomputedColumnsRef.current;
+    const judged = judgedNotesRef.current;
+
+    if (!times || !columns || !judged) {
+      return;
+    }
+
+    const maxWindow = windowConfig.Miss;
+    if (maxWindow <= 0) {
+      return;
+    }
+
+    const now = musicTime.current ? musicTime.current.currentTime * 1000 : currentTimeRef.current;
+
+    let bestIndex = -1;
+    let bestAbsDiff = Number.POSITIVE_INFINITY;
+    let bestSignedDiff = 0;
+
+    for (let i = 0; i < times.length; i++) {
+      if (judged[i]) continue;
+      if (columns[i] !== column) continue;
+
+      const diff = times[i] - now;
+      const absDiff = Math.abs(diff);
+
+      if (absDiff > maxWindow && diff > 0) {
+        break;
+      }
+
+      if (absDiff < bestAbsDiff) {
+        bestAbsDiff = absDiff;
+        bestSignedDiff = diff;
+        bestIndex = i;
+      }
+    }
+
+    if (bestIndex === -1 || bestAbsDiff > maxWindow) {
+      return;
+    }
+
+    let result: JudgementName;
+    if (bestAbsDiff <= windowConfig.Marvelous) {
+      result = 'Marvelous';
+    } else if (bestAbsDiff <= windowConfig.Perfect) {
+      result = 'Perfect';
+    } else if (bestAbsDiff <= windowConfig.Great) {
+      result = 'Great';
+    } else if (bestAbsDiff <= windowConfig.Good) {
+      result = 'Good';
+    } else if (bestAbsDiff <= windowConfig.Okay) {
+      result = 'Okay';
+    } else {
+      result = 'Miss';
+    }
+
+    judged[bestIndex] = true;
+
+    setJudgementCounts(prev => {
+      const newCounts: Record<JudgementName, number> = {
+        Marvelous: prev.Marvelous,
+        Perfect: prev.Perfect,
+        Great: prev.Great,
+        Good: prev.Good,
+        Okay: prev.Okay,
+        Miss: prev.Miss,
+      };
+
+      if (result === 'Marvelous') {
+        newCounts.Marvelous += 1;
+      } else if (result === 'Perfect') {
+        newCounts.Perfect += 1;
+      } else if (result === 'Great') {
+        newCounts.Great += 1;
+      } else if (result === 'Good') {
+        newCounts.Good += 1;
+      } else if (result === 'Okay') {
+        newCounts.Okay += 1;
+      } else {
+        newCounts.Miss += 1;
+      }
+
+      return newCounts;
+    });
+    setLastJudgement({ type: result, diff: bestSignedDiff });
+  }, [activeJudgementWindow]);
 
   useEffect(() => {
+    if (musicTime.current) {
+      musicTime.current.playbackRate = userData.MusicSpeed;
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      setPressedKeys(prev => new Set(prev).add(event.key));
-      console.log(`Key DOWN: ${event.key} at ${musicTime.current ? musicTime.current.currentTime * 1000 : 0}ms`);
+      const key = event.key.toLowerCase();
+      setPressedKeys(prev => new Set(prev).add(key));
+
+      const circleSize = songInfo['CircleSize'];
+      const maniaWidthKey = String(circleSize);
+      const keybinds = userData.Keybinds[maniaWidthKey].map(k => k.toLowerCase());
+      const column = keybinds.indexOf(key);
+
+      if (column !== -1) {
+        judgeHit(column);
+      }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
       setPressedKeys(prev => {
         const newKeys = new Set(prev);
-        newKeys.delete(event.key);
-        console.log(`Key UP: ${event.key} at ${musicTime.current ? musicTime.current.currentTime * 1000 : 0}ms`);
+        newKeys.delete(event.key.toLowerCase());
         return newKeys;
       });
     };
@@ -75,9 +202,20 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [judgeHit, songInfo, userData]);
 
   useEffect(() => {
+    setJudgementCounts({
+      Marvelous: 0,
+      Perfect: 0,
+      Great: 0,
+      Good: 0,
+      Okay: 0,
+      Miss: 0,
+    });
+    setLastJudgement(null);
+    judgedNotesRef.current = new Array(hitObjects.length).fill(false);
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -146,19 +284,42 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
       ctx.fillStyle = '#FFFFFF';
       const timesArr = sortedTimesRef.current || [];
       const colsArr = precomputedColumnsRef.current || [];
+      const judgedArr = judgedNotesRef.current || [];
+
+      const missWindow = activeJudgementWindow.Miss;
 
       let lo = 0, hi = timesArr.length;
       const lowerBoundTime = now - visibleWindowMsPast;
       while (lo < hi) {
         const mid = (lo + hi) >>> 1;
-        if (timesArr[mid] < lowerBoundTime) lo = mid + 1; else hi = mid;
+        if (timesArr[mid] < lowerBoundTime) lo = mid + 1;
+        else hi = mid;
       }
       const upperBoundTime = now + visibleWindowMsFuture;
       for (let i = lo; i < timesArr.length && timesArr[i] <= upperBoundTime; i++) {
+        if (judgedArr[i]) continue;
+
         const time = timesArr[i];
         const dt = time - now;
-        const column = colsArr[i] ?? getColumn(hitObjects[i].x);
+        const column = colsArr[i];
         const x = column * laneWidthPx;
+        if (missWindow !== null && dt < -missWindow) {
+          judgedArr[i] = true;
+          setJudgementCounts(prev => {
+            const newCounts: Record<JudgementName, number> = {
+              Marvelous: prev.Marvelous,
+              Perfect: prev.Perfect,
+              Great: prev.Great,
+              Good: prev.Good,
+              Okay: prev.Okay,
+              Miss: prev.Miss,
+            };
+            newCounts.Miss += 1;
+            return newCounts;
+          });
+          setLastJudgement({ type: 'Miss', diff: dt });
+          continue;
+        }
         const y = receptorY - noteHeightPx - dt * pixelsPerMs;
         if (y + noteHeightPx < 0 || y > canvas.height) continue;
         ctx.fillRect(x, y, laneWidthPx, noteHeightPx);
@@ -205,6 +366,20 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
       <div>
         <p>Currently pressed keys: {Array.from(pressedKeys).join(', ') || 'None'}</p>
         <p>Number of keys pressed: {pressedKeys.size}</p>
+      </div>
+
+      <div>
+        <p>
+          Last judgement: {lastJudgement
+            ? `${lastJudgement.type} (${lastJudgement.diff.toFixed(2)}ms)`
+            : 'None'}
+        </p>
+        {judgementTypes.map(type => (
+          <p key={type}>
+            {type}: {judgementCounts[type]}
+          </p>
+        ))}
+        <p>Accuracy: {`${displayAccuracy.toFixed(2)}%`}</p>
       </div>
 
 
