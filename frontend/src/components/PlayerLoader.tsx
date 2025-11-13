@@ -15,6 +15,10 @@ type UserData = {
   Keybinds: Record<string, string[]>;
   ManiaWidth: Record<string, string>;
   ManiaHeight: Record<string, string>;
+  ScrollSpeed: number;
+  ReceptorOffset: number;
+  BackgroundBlur: number;
+  BackgroundOpacity: number;
 };
 
 type PlayerLoaderProps = {
@@ -31,7 +35,11 @@ const PlayerLoader = ({ songInfo, hitObjects, mapPath }: PlayerLoaderProps) => {
     setUserData({
       Keybinds: {'4': ['d', 'f', 'j', 'k']},
       ManiaWidth: {'4': '120'},
-      ManiaHeight: {'4': '30'}
+      ManiaHeight: {'4': '30'},
+      ScrollSpeed: 2,
+      ReceptorOffset: 120,
+      BackgroundBlur: 5,
+      BackgroundOpacity: 0.6,
     });
   }, []);
 

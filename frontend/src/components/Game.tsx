@@ -14,6 +14,10 @@ type UserData = {
   Keybinds: Record<string, string[]>;
   ManiaWidth: Record<string, string>;
   ManiaHeight: Record<string, string>;
+  ScrollSpeed: number;
+  ReceptorOffset: number;
+  BackgroundBlur: number;
+  BackgroundOpacity: number;
 };
 
 type GameProps = {
@@ -29,7 +33,6 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
   const musicTime = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const pixelsPerMsRef = useRef<number>(2); // change this into a user data later
   const currentTimeRef = useRef<number>(0);
   const lastUiUpdateRef = useRef<number>(0);
   const smoothedNowMsRef = useRef<number>(0);
@@ -119,10 +122,10 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
       const now = smoothedNowMsRef.current;
       const visibleWindowMsPast = 200;
       const visibleWindowMsFuture = 4000;
-      const pixelsPerMs = pixelsPerMsRef.current;
+      const pixelsPerMs = userData.ScrollSpeed;
 
       // receptor line
-      const receptorY = canvas.height - 120; // change this later
+      const receptorY = canvas.height - userData.ReceptorOffset;
       ctx.fillStyle = '#444444';
       ctx.fillRect(0, receptorY, canvas.width, 2);
 
@@ -143,7 +146,7 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
         const dt = time - now;
         const column = colsArr[i] ?? getColumn(hitObjects[i].x);
         const x = column * laneWidthPx;
-        const y = receptorY - dt * pixelsPerMs;
+        const y = receptorY - noteHeightPx - dt * pixelsPerMs;
         if (y + noteHeightPx < 0 || y > canvas.height) continue;
         ctx.fillRect(x, y, laneWidthPx, noteHeightPx);
       }
@@ -162,6 +165,17 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
 
   return (
     <>
+      <div
+        className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat transform scale-105"
+        style={{
+          backgroundImage: `url(${mapPath + String(songInfo['BackgroundFilename'])})`,
+          filter: `blur(${userData.BackgroundBlur}px)`,
+        }}
+      />
+      <div
+        className="fixed inset-0 -z-10 bg-black pointer-events-none"
+        style={{ opacity: userData.BackgroundOpacity }}
+      />
       <audio
         ref={musicTime}
         src={mapPath + songInfo['AudioFilename']}
@@ -182,7 +196,7 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
 
 
 
-      <main className="flex justify-center items-center w-screen h-screen text-[#FFFFFF]">
+      <main className="absolute top-0 flex justify-center items-center w-screen h-screen text-[#FFFFFF] pointer-events-none">
         <canvas
           ref={canvasRef}
           className="bg-black"
