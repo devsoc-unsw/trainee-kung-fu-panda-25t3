@@ -2,23 +2,15 @@ import { Link, useLocation } from "react-router-dom";
 
 const GameOver = () => {
   const location = useLocation();
-  const { score = 0, accuracy = 0, highestCombo = 0 } = location.state || {};
+  const { completionPercent = 0 } = location.state || {};
   return (
     <main className="flex flex-col justify-center items-center w-screen h-screen text-[#FFFFFF] bg-black">
       <h1 className="text-6xl font-bold mb-8">Game Over</h1>
       
       <div className="flex flex-col gap-4 text-2xl mb-8">
         <div>
-          <span className="font-semibold">Final Score: </span>
-          <span>{score.toLocaleString()}</span>
-        </div>
-        <div>
-          <span className="font-semibold">Accuracy: </span>
-          <span>{accuracy.toFixed(2)}%</span>
-        </div>
-        <div>
-          <span className="font-semibold">Highest Combo: </span>
-          <span>{highestCombo}</span>
+          <span className="font-semibold">Completion: </span>
+          <span>{completionPercent.toFixed(2)}%</span>
         </div>
       </div>
 

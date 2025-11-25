@@ -165,12 +165,14 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
 
     // check if life is <= 0 and navigate to game over
     if (lifeRef.current <= 0) {
-      const finalAccuracy = Math.min(100, Math.max(0, accuracyPercent));
+      const audio = musicTime.current;
+      const currentTimeMs = audio ? audio.currentTime * 1000 : currentTimeRef.current;
+      const durationMs = audio && audio.duration ? audio.duration * 1000 : 0;
+      const completionPercent = durationMs > 0 ? (currentTimeMs / durationMs) * 100 : 0;
+      
       navigate('/gameover', {
         state: {
-          score: computedScore,
-          accuracy: finalAccuracy,
-          highestCombo: highestComboRef.current,
+          completionPercent: completionPercent,
         },
       });
     }
@@ -494,6 +496,25 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
         src={mapPath + songInfo['AudioFilename']}
         autoPlay
         controls
+        onEnded={() => {
+          const accuracyPercent = calculateAccuracyPercent(judgementCountsRef.current, userData.Accuracy);
+          const finalAccuracy = Math.min(100, Math.max(0, accuracyPercent));
+          const accuracyValue = finalAccuracy / 100;
+          const comboProgress = maxComboPortion > 0 ? currentComboPortionRef.current / maxComboPortion : 1;
+          const accuracyProgress = maxCombo > 0 ? currentAccuracyJudgementCountRef.current / maxCombo : 1;
+          const finalScore = Math.round(
+            500000 * accuracyValue * comboProgress +
+            500000 * Math.pow(accuracyValue, 5) * accuracyProgress
+          );
+
+          navigate('/passedmap', {
+            state: {
+              score: finalScore,
+              accuracy: finalAccuracy,
+              highestCombo: highestComboRef.current,
+            },
+          });
+        }}
       />
 
       <h1>hi</h1>
