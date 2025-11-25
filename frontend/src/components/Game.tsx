@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+
+type SongInfo = Record<string, string | number>;
 
 type HitObject = {
   x: number;
@@ -8,52 +10,271 @@ type HitObject = {
   hitSound: number;
 };
 
-type SongInfo = Record<string, string | number>;
+type JudgementName = 'Marvelous' | 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss';
 
 type UserData = {
   Keybinds: Record<string, string[]>;
   ManiaWidth: Record<string, string>;
   ManiaHeight: Record<string, string>;
+  ScrollSpeed: number;
+  ReceptorOffset: number;
+  BackgroundBlur: number;
+  BackgroundOpacity: number;
+  Accuracy: Record<string, number>;
+  Life: Record<string, number>;
+  Judgment: string;
+  MusicSpeed: number;
+  ScoreValues: Record<JudgementName, number>;
+  JudgementWindow: Record<
+    string,
+    Record<JudgementName, number>
+  >;
 };
 
-const Game = () => {  
+type GameProps = {
+  songInfo: SongInfo;
+  userData: UserData;
+  mapPath: string;
+  hitObjects: HitObject[];
+};
+
+const JUDGEMENT_NAMES: JudgementName[] = ['Marvelous', 'Perfect', 'Great', 'Good', 'Okay', 'Miss'];
+const COMBO_EXPONENT = 0.5;
+
+const createEmptyJudgementCounts = (): Record<JudgementName, number> => {
+  const counts: Record<JudgementName, number> = {
+    Marvelous: 0,
+    Perfect: 0,
+    Great: 0,
+    Good: 0,
+    Okay: 0,
+    Miss: 0,
+  };
+  return counts;
+};
+
+const cloneJudgementCounts = (source: Record<JudgementName, number>): Record<JudgementName, number> => {
+  const copy = createEmptyJudgementCounts();
+  for (const name of JUDGEMENT_NAMES) {
+    copy[name] = source[name];
+  }
+  return copy;
+};
+
+const calculateAccuracyPercent = (
+  counts: Record<JudgementName, number>,
+  weights: Record<string, number>,
+) => {
+  const total = JUDGEMENT_NAMES.reduce((sum, type) => sum + counts[type], 0);
+  if (total === 0) return 100;
+  const weightedSum = JUDGEMENT_NAMES.reduce((sum, type) => sum + (weights[type] ?? 0) * counts[type], 0);
+  return weightedSum / total;
+};
+
+const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {  
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const [, setHitObjects] = useState<HitObject[]>([]); // this and below should be parsed into a file later on
-  const [songInfo, setSongInfo] = useState<SongInfo>({});
-  const [, setUserData] = useState<UserData>({ Keybinds: {}, ManiaWidth: {}, ManiaHeight: {} }); // query from local storage first otherwise set defults
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
+  const [judgementCounts, setJudgementCounts] = useState<Record<JudgementName, number>>(createEmptyJudgementCounts);
+  const judgementCountsRef = useRef<Record<JudgementName, number>>(createEmptyJudgementCounts());
+  const [lastJudgement, setLastJudgement] = useState<{ type: JudgementName; diff: number } | null>(null);
+  const [score, setScore] = useState<number>(0);
+  const [combo, setCombo] = useState<number>(0);
+  const [highestCombo, setHighestCombo] = useState<number>(0);
   const musicTime = useRef<HTMLAudioElement | null>(null);
-  const mapPath = './beatmapsRaw/200552/'; // turn reading files into its own component later
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const currentTimeRef = useRef<number>(0);
+  const lastUiUpdateRef = useRef<number>(0);
+  const smoothedNowMsRef = useRef<number>(0);
+  const lastRafTimeRef = useRef<number>(0);
+  const precomputedColumnsRef = useRef<number[] | null>(null);
+  const sortedTimesRef = useRef<number[] | null>(null);
+  const judgedNotesRef = useRef<boolean[]>([]);
+  const comboRef = useRef<number>(0);
+  const highestComboRef = useRef<number>(0);
+  const currentBaseScoreRef = useRef<number>(0);
+  const currentMaximumBaseScoreRef = useRef<number>(0);
+  const currentAccuracyJudgementCountRef = useRef<number>(0);
+  const currentComboPortionRef = useRef<number>(0);
 
-  useEffect(() => {
-    const theMap = mapPath + 'BlackYooh vs. siromaru - BLACK or WHITE (DE-CADE) [ADVANCED Lv.12].osu';
-    const loadHitObjects = async () => {
-      const file = await fetch(theMap);
-      const fileString = await file.text();
-      setHitObjects(getHitObjects(fileString));
-      setSongInfo(getSongInfo(fileString));
-    };
+  const activeJudgementWindow = userData.JudgementWindow[userData.Judgment];
+  const scoreValues = userData.ScoreValues;
 
-    loadHitObjects();
+  const maxBaseScorePerHit = useMemo(() => {
+    let max = 0;
+    for (const name of JUDGEMENT_NAMES) {
+      const value = scoreValues[name];
+      if (value > max) {
+        max = value;
+      }
+    }
+    return max;
+  }, [scoreValues]);
 
-    setUserData({
-      Keybinds: {'4': ['d', 'f', 'j', 'k']},
-      ManiaWidth: {'4': '120'},
-      ManiaHeight: {'4': '30'}
+  const maxCombo = hitObjects.length;
+  const maxComboPortion = useMemo(() => {
+    let total = 0;
+    for (let i = 1; i <= maxCombo; i++) {
+      total += maxBaseScorePerHit * Math.pow(i, COMBO_EXPONENT);
+    }
+    return total;
+  }, [maxCombo, maxBaseScorePerHit]);
+  const rawAccuracy = calculateAccuracyPercent(judgementCounts, userData.Accuracy);
+  const displayAccuracy = Math.min(100, Math.max(0, rawAccuracy));
+
+  const applyJudgementEffects = useCallback((result: JudgementName) => {
+    if (result === 'Miss') {
+      comboRef.current = 0;
+    } else {
+      comboRef.current += 1;
+    }
+
+    if (comboRef.current > highestComboRef.current) {
+      highestComboRef.current = comboRef.current;
+    }
+
+    setCombo(comboRef.current);
+    setHighestCombo(highestComboRef.current);
+
+    currentAccuracyJudgementCountRef.current += 1;
+    currentMaximumBaseScoreRef.current += maxBaseScorePerHit;
+    currentBaseScoreRef.current += scoreValues[result];
+    currentComboPortionRef.current += maxBaseScorePerHit * Math.pow(comboRef.current, COMBO_EXPONENT);
+
+    const accuracyPercent = calculateAccuracyPercent(judgementCountsRef.current, userData.Accuracy);
+    const accuracyValue = Math.min(100, Math.max(0, accuracyPercent)) / 100;
+    const comboProgress = maxComboPortion > 0 ? currentComboPortionRef.current / maxComboPortion : 1;
+    const accuracyProgress = maxCombo > 0 ? currentAccuracyJudgementCountRef.current / maxCombo : 1;
+
+    const computedScore = Math.round(
+      500000 * accuracyValue * comboProgress +
+      500000 * Math.pow(accuracyValue, 5) * accuracyProgress
+    );
+
+    setScore(computedScore);
+  }, [maxCombo, maxComboPortion, userData.Accuracy, maxBaseScorePerHit, scoreValues]);
+
+  const judgeHit = useCallback((column: number) => {
+    const windowConfig = activeJudgementWindow;
+    if (!windowConfig) {
+      return;
+    }
+
+    const times = sortedTimesRef.current;
+    const columns = precomputedColumnsRef.current;
+    const judged = judgedNotesRef.current;
+
+    if (!times || !columns || !judged) {
+      return;
+    }
+
+    const maxWindow = windowConfig.Miss;
+    if (maxWindow <= 0) {
+      return;
+    }
+
+    const now = musicTime.current ? musicTime.current.currentTime * 1000 : currentTimeRef.current;
+
+    let bestIndex = -1;
+    let bestAbsDiff = Number.POSITIVE_INFINITY;
+    let bestSignedDiff = 0;
+
+    for (let i = 0; i < times.length; i++) {
+      if (judged[i]) continue;
+      if (columns[i] !== column) continue;
+
+      const diff = times[i] - now;
+      const absDiff = Math.abs(diff);
+
+      if (absDiff > maxWindow && diff > 0) {
+        break;
+      }
+
+      if (absDiff < bestAbsDiff) {
+        bestAbsDiff = absDiff;
+        bestSignedDiff = diff;
+        bestIndex = i;
+      }
+    }
+
+    if (bestIndex === -1 || bestAbsDiff > maxWindow) {
+      return;
+    }
+
+    let result: JudgementName;
+    if (bestAbsDiff <= windowConfig.Marvelous) {
+      result = 'Marvelous';
+    } else if (bestAbsDiff <= windowConfig.Perfect) {
+      result = 'Perfect';
+    } else if (bestAbsDiff <= windowConfig.Great) {
+      result = 'Great';
+    } else if (bestAbsDiff <= windowConfig.Good) {
+      result = 'Good';
+    } else if (bestAbsDiff <= windowConfig.Okay) {
+      result = 'Okay';
+    } else {
+      result = 'Miss';
+    }
+
+    judged[bestIndex] = true;
+
+    setJudgementCounts(prev => {
+      const newCounts: Record<JudgementName, number> = {
+        Marvelous: prev.Marvelous,
+        Perfect: prev.Perfect,
+        Great: prev.Great,
+        Good: prev.Good,
+        Okay: prev.Okay,
+        Miss: prev.Miss,
+      };
+
+      if (result === 'Marvelous') newCounts.Marvelous += 1;
+      else if (result === 'Perfect') newCounts.Perfect += 1;
+      else if (result === 'Great') newCounts.Great += 1;
+      else if (result === 'Good') newCounts.Good += 1;
+      else if (result === 'Okay') newCounts.Okay += 1;
+      else newCounts.Miss += 1;
+
+      judgementCountsRef.current = cloneJudgementCounts(newCounts);
+      return newCounts;
     });
-  }, []);
+    setLastJudgement({ type: result, diff: bestSignedDiff });
+    applyJudgementEffects(result);
+  }, [activeJudgementWindow, applyJudgementEffects]);
 
   useEffect(() => {
+    if (musicTime.current) {
+      musicTime.current.playbackRate = userData.MusicSpeed;
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      setPressedKeys(prev => new Set(prev).add(event.key));
-      console.log(`Key DOWN: ${event.key} at ${musicTime.current ? musicTime.current.currentTime * 1000 : 0}ms`);
+      const key = event.key.toLowerCase();
+
+       if (key === 'escape') {
+         const audio = musicTime.current;
+         if (audio) {
+           if (audio.paused) audio.play();
+           else audio.pause();
+         }
+         return;
+       }
+
+      setPressedKeys(prev => new Set(prev).add(key));
+
+      const circleSize = songInfo['CircleSize'];
+      const maniaWidthKey = String(circleSize);
+      const keybinds = userData.Keybinds[maniaWidthKey].map(k => k.toLowerCase());
+      const column = keybinds.indexOf(key);
+
+      if (column !== -1) {
+        judgeHit(column);
+      }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
       setPressedKeys(prev => {
         const newKeys = new Set(prev);
-        newKeys.delete(event.key);
-        console.log(`Key UP: ${event.key} at ${musicTime.current ? musicTime.current.currentTime * 1000 : 0}ms`);
+        newKeys.delete(event.key.toLowerCase());
         return newKeys;
       });
     };
@@ -65,138 +286,163 @@ const Game = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [judgeHit, songInfo, userData]);
 
-  const getHitObjects = (fileString: string): HitObject[] => {
-    const lines = fileString.split('\n');
-    const hitObjects: HitObject[] = [];
-    let inSection = false;
+  useEffect(() => {
+    const resetCounts = createEmptyJudgementCounts();
+    setJudgementCounts(resetCounts);
+    judgementCountsRef.current = cloneJudgementCounts(resetCounts);
+    setLastJudgement(null);
+    judgedNotesRef.current = new Array(hitObjects.length).fill(false);
+    comboRef.current = 0;
+    highestComboRef.current = 0;
+    currentBaseScoreRef.current = 0;
+    currentMaximumBaseScoreRef.current = 0;
+    currentAccuracyJudgementCountRef.current = 0;
+    currentComboPortionRef.current = 0;
+    setCombo(0);
+    setHighestCombo(0);
+    setScore(0);
 
-    for (const line of lines) {
-      const trimmed = line.trim();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-      if (trimmed === '[HitObjects]') {
-        inSection = true;
-        continue;
-      }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-      if (inSection) {
-        if (trimmed.startsWith('[')) break;
-
-        if (trimmed && !trimmed.startsWith('//')) {
-          const parts = trimmed.split(',');
-          if (parts.length >= 4) {
-            hitObjects.push({
-              x: parseInt(parts[0]),
-              y: parseInt(parts[1]),
-              time: parseInt(parts[2]),
-              type: parseInt(parts[3]),
-              hitSound: parseInt(parts[4])
-            });
-          }
-        }
-      }
-    }
-
-    return hitObjects;
-  };
-
-  const getSongInfo = (fileString: string): SongInfo => {
-    const lines = fileString.split('\n');
-    const songInfo: SongInfo = {};
-
-    const wantedKeys = {
-      general: ['AudioFilename', 'AudioLeadIn', 'PreviewTime', 'Mode'],
-      metadata: ['TitleUnicode', 'ArtistUnicode', 'Creator', 'Version', 'BeatmapID'],
-      difficulty: ['CircleSize', 'ApproachRate']
-    };
+    const circleSize = songInfo['CircleSize'];
+    const maniaWidthKey = String(circleSize);
+    const laneWidthPx = parseInt(userData.ManiaWidth[maniaWidthKey]);
+    const noteHeightPx = parseInt(userData.ManiaHeight[maniaWidthKey]);
     
-    let currentSection = '';
+    canvas.width = laneWidthPx * parseInt(String(circleSize));
+    canvas.height = window.innerHeight;
 
-    for (const line of lines) {
-      const trimmed = line.trim();
+    const getColumn = (xValue: number) => {
+      return Math.floor(xValue * Number(songInfo['CircleSize']) / 512);
+    };
 
-      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-        currentSection = trimmed.slice(1, -1);
-        continue;
-      }
-
-      if (!trimmed || trimmed.startsWith('//')) {
-        continue;
-      }
-
-      if (currentSection === 'General') {
-        const parts = trimmed.split(':');
-        if (parts.length >= 2) {
-          const key = parts[0].trim();
-          const value = parts.slice(1).join(':').trim();
-          
-          if (wantedKeys.general.includes(key)) {
-            songInfo[key] = value;
-          }
-        }
-      }
-
-      else if (currentSection === 'Metadata') {
-        const parts = trimmed.split(':');
-        if (parts.length >= 2) {
-          const key = parts[0].trim();
-          const value = parts.slice(1).join(':').trim();
-          
-          if (wantedKeys.metadata.includes(key)) {
-            songInfo[key] = value;
-          }
-        }
-      }
-
-      else if (currentSection === 'Difficulty') {
-        const parts = trimmed.split(':');
-        if (parts.length >= 2) {
-          const key = parts[0].trim();
-          const value = parts.slice(1).join(':').trim();
-          
-          if (wantedKeys.difficulty.includes(key)) {
-            songInfo[key] = value;
-          }
-        }
-      }
-
-      else if (currentSection === 'Events') {
-        if (trimmed.startsWith('0,0,')) {
-          const parts = trimmed.split(',');
-          let filename = parts[2].trim();
-
-          if (filename.startsWith('"') && filename.endsWith('"')) {
-            filename = filename.slice(1, -1);
-          }
-
-          songInfo['BackgroundFilename'] = filename;
-          songInfo['BackgroundXOffset'] = parseInt(parts[3]);
-          songInfo['BackgroundYOffset'] = parseInt(parts[4]);
-        }
-      }
+    // precompute columns and sorted times
+    const columns: number[] = new Array(hitObjects.length);
+    for (let i = 0; i < hitObjects.length; i++) {
+      columns[i] = getColumn(hitObjects[i].x);
     }
+    precomputedColumnsRef.current = columns;
 
-    return songInfo;
-  };
+    const times = hitObjects.map(o => o.time);
+    sortedTimesRef.current = times;
 
-  const timeUpdate = () => {
-    if (musicTime.current) {
-      setCurrentTime(musicTime.current.currentTime * 1000);
-    }
-  };
-/*
-  const getColumn = (xValue) => {
-    return Math.floor(xValue * songInfo['CircleSize'] / 512) // clamped between 0 and columnCount - 1
-  }
-*/
+    smoothedNowMsRef.current = musicTime.current ? musicTime.current.currentTime * 1000 : 0;
+    lastRafTimeRef.current = performance.now();
+
+    const animate = (rafTime?: number) => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const audioNowMs = musicTime.current ? musicTime.current.currentTime * 1000 : currentTimeRef.current;
+      currentTimeRef.current = audioNowMs;
+
+      const nowPerf = typeof rafTime === 'number' ? rafTime : performance.now();
+      if (nowPerf - lastUiUpdateRef.current > 100) {
+        lastUiUpdateRef.current = nowPerf;
+        setCurrentTime(Math.floor(audioNowMs));
+      }
+
+      const deltaMs = nowPerf - lastRafTimeRef.current;
+      lastRafTimeRef.current = nowPerf;
+      let smoothed = smoothedNowMsRef.current + (deltaMs > 0 && deltaMs < 100 ? deltaMs : 0);
+      const diff = audioNowMs - smoothed;
+      if (Math.abs(diff) > 120) {
+        smoothed = audioNowMs;
+      } else {
+        smoothed += diff * 0.12;
+      }
+      smoothedNowMsRef.current = smoothed;
+
+      const now = smoothedNowMsRef.current;
+      const visibleWindowMsPast = 200;
+      const visibleWindowMsFuture = 4000;
+      const pixelsPerMs = userData.ScrollSpeed;
+
+      // receptor line
+      const receptorY = canvas.height - userData.ReceptorOffset;
+      ctx.fillStyle = '#444444';
+      ctx.fillRect(0, receptorY, canvas.width, 2);
+
+      // draw each upcoming object
+      ctx.fillStyle = '#FFFFFF';
+      const timesArr = sortedTimesRef.current || [];
+      const colsArr = precomputedColumnsRef.current || [];
+      const judgedArr = judgedNotesRef.current || [];
+
+      const missWindow = activeJudgementWindow.Miss;
+
+      let lo = 0, hi = timesArr.length;
+      const lowerBoundTime = now - visibleWindowMsPast;
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        if (timesArr[mid] < lowerBoundTime) lo = mid + 1;
+        else hi = mid;
+      }
+      const upperBoundTime = now + visibleWindowMsFuture;
+      for (let i = lo; i < timesArr.length && timesArr[i] <= upperBoundTime; i++) {
+        if (judgedArr[i]) continue;
+
+        const time = timesArr[i];
+        const dt = time - now;
+        const column = colsArr[i];
+        const x = column * laneWidthPx;
+        if (dt < -missWindow) {
+          judgedArr[i] = true;
+          setJudgementCounts(prev => {
+            const newCounts: Record<JudgementName, number> = {
+              Marvelous: prev.Marvelous,
+              Perfect: prev.Perfect,
+              Great: prev.Great,
+              Good: prev.Good,
+              Okay: prev.Okay,
+              Miss: prev.Miss,
+            };
+            newCounts.Miss += 1;
+            judgementCountsRef.current = cloneJudgementCounts(newCounts);
+            return newCounts;
+          });
+          setLastJudgement({ type: 'Miss', diff: dt });
+          applyJudgementEffects('Miss');
+          continue;
+        }
+        const y = receptorY - noteHeightPx - dt * pixelsPerMs;
+        if (y + noteHeightPx < 0 || y > canvas.height) continue;
+        ctx.fillRect(x, y, laneWidthPx, noteHeightPx);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [songInfo, userData, hitObjects, applyJudgementEffects]);
 
   return (
     <>
+      <div
+        className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat transform scale-105"
+        style={{
+          backgroundImage: `url(${mapPath + String(songInfo['BackgroundFilename'])})`,
+          filter: `blur(${userData.BackgroundBlur}px)`,
+        }}
+      />
+      <div
+        className="fixed inset-0 -z-10 bg-black pointer-events-none"
+        style={{ opacity: userData.BackgroundOpacity }}
+      />
       <audio
         ref={musicTime}
         src={mapPath + songInfo['AudioFilename']}
-        onTimeUpdate={timeUpdate}
         autoPlay
         controls
       />
@@ -212,10 +458,30 @@ const Game = () => {
         <p>Number of keys pressed: {pressedKeys.size}</p>
       </div>
 
+      <div>
+        <p>
+          Last judgement: {lastJudgement
+            ? `${lastJudgement.type} (${lastJudgement.diff.toFixed(2)}ms)`
+            : 'None'}
+        </p>
+        {JUDGEMENT_NAMES.map(type => (
+          <p key={type}>
+            {type}: {judgementCounts[type]}
+          </p>
+        ))}
+        <p>Accuracy: {`${displayAccuracy.toFixed(2)}%`}</p>
+        <p>Score: {score}</p>
+        <p>Combo: {combo}</p>
+        <p>Highest combo: {highestCombo}</p>
+      </div>
 
 
-      <main className="flex justify-center items-center w-screen h-screen text-[#FFFFFF]">
-        <span className="text-3xl">Game</span>
+
+      <main className="absolute top-0 flex justify-center items-center w-screen h-screen text-[#FFFFFF] pointer-events-none">
+        <canvas
+          ref={canvasRef}
+          className="bg-black"
+        />
       </main>
     </>
   )

@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import './App.css';
 import StartMenu from './components/StartMenu';
 import SongSelect from './components/SongSelect';
-import Game from './components/Game';
+import MapLoader from './components/MapLoader';
 
 const Pages = () => {
   return (
@@ -11,7 +11,7 @@ const Pages = () => {
       <Routes>
         <Route path="/" element={<StartMenu />} />
         <Route path="/select" element={<SongSelect />} />
-        <Route path="/game" element={<Game />} />
+        <Route path="/game" element={<MapLoader />} />
       </Routes>
     </>
   )
