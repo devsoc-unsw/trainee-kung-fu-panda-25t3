@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
-import { useState, useEffect, useRef } from 'react';
 import CD from "../../public/CD.svg";
 import '../App.css'; 
+import UploadBeatmap from "./UploadBeatmap";
 
 const SongSelect = () => {  
   return (
@@ -10,7 +10,8 @@ const SongSelect = () => {
 
         <span className="text-3xl">Select a song!</span>
 
-        {/* somehow read all .osu files in the beatmapsRaw folder and display them in a list */}
+        {/* read all .osu files in the beatmapsRaw folder and display them in a list */}
+        {/* can do this in backend, make a get request */}
         {/* and send the file name to the game using location.state */}
         {/* parsing file data has been done in maploader.tsx */}
         {/* probs need to split that and make a component that would work in song select and maploader */}
@@ -27,6 +28,9 @@ const SongSelect = () => {
         </Link>
 
         <img src={CD} alt="" />
+
+        {/* this button is temporary, u make it look nicer later */}
+        <UploadBeatmap />
 
       </main>
     </>

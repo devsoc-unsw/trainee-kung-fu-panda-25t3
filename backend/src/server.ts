@@ -2,6 +2,11 @@ import dotenv from 'dotenv';
 import express, { json, Request, Response } from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
+import multer from 'multer';
+import unzipper from 'unzipper';
+import path from 'path';
+import fs from 'fs';
+import { pipeline } from 'stream/promises';
 import connectDB from './config';
 
 import {
@@ -9,7 +14,7 @@ import {
 } from './interface';
 import { echo } from './echo';
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '../ENVIRONMENTS.env') });
 
 // Set up web app
 const app = express();
@@ -24,6 +29,13 @@ connectDB();
 
 const PORT: number = parseInt(process.env.PORT || '5000');
 const HOST: string = process.env.IP || '127.0.0.1';
+const BEATMAPS_DIR = path.resolve(__dirname, '../../frontend/public/beatmapsRaw');
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100mb
+  },
+});
 
 // ====================================================================
 
@@ -53,7 +65,46 @@ app.get('/echo', (req: Request, res: Response) => {
 
 // --------------------- ADD NEW ROUTES BELOW -------------------------
 
+// yo guys do i bother making a function for this just like 1531?
+app.post('/api/beatmaps/upload', upload.single('beatmap'), async (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
 
+  try {
+    await fs.promises.mkdir(BEATMAPS_DIR, { recursive: true });
+    const originalName = req.file.originalname.toLowerCase();
+
+    if (!originalName.endsWith('.osz')) {
+      return res.status(400).json({ error: 'Only .osz files are supported' });
+    }
+
+    const baseName = path.basename(originalName, path.extname(originalName)).trim();
+    const folderName = baseName.split(/\s+/)[0];
+    const targetRoot = path.join(BEATMAPS_DIR, folderName);
+
+    await fs.promises.mkdir(targetRoot, { recursive: true });
+
+    const directory = await unzipper.Open.buffer(req.file.buffer);
+    await Promise.all(directory.files.map(async (file: any) => {
+      const destinationPath = path.join(targetRoot, file.path);
+
+      if (file.type === 'Directory') {
+        await fs.promises.mkdir(destinationPath, { recursive: true });
+        return;
+      }
+
+      await fs.promises.mkdir(path.dirname(destinationPath), { recursive: true });
+      const writeStream = fs.createWriteStream(destinationPath);
+      await pipeline(file.stream(), writeStream);
+    }));
+
+    res.status(200).json({ message: 'Beatmap uploaded and extracted successfully' });
+  } catch (error) {
+    console.error('Beatmap upload failed:', error);
+    res.status(500).json({ error: 'Failed to process beatmap archive' });
+  }
+});
 
 // --------------------- ADD NEW ROUTES ABOVE -------------------------
 

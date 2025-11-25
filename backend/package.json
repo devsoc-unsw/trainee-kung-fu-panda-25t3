@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "ts-node-dev -T src/server.ts",
     "build": "tsc --project tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "node dist/server.ts",
     "lint": "eslint 'src/**/*.{ts,js}'",
     "lint-fix": "eslint --fix 'src/**/*.{ts,js}'",
     "ts-node-coverage": "nyc --reporter=text --reporter=lcov ts-node -T src/server.ts"
@@ -20,7 +20,9 @@
     "express": "^5.1.0",
     "mongoose": "^8.15.1",
     "morgan": "^1.10.1",
-    "sync-request-curl": "^3.3.3"
+    "multer": "^2.0.2",
+    "sync-request-curl": "^3.3.3",
+    "unzipper": "^0.12.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -28,7 +30,9 @@
     "@types/express": "^5.0.3",
     "@types/mongoose": "^5.11.96",
     "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.0.0",
     "@types/node": "^24.2.1",
+    "@types/unzipper": "^0.10.11",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.39.0",
     "eslint": "^8.57.1",
