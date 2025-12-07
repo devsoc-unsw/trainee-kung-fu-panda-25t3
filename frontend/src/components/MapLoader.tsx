@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import PlayerLoader from './PlayerLoader';
+import { useLocation } from 'react-router-dom';
 
 type HitObject = {
   x: number;
@@ -11,17 +12,14 @@ type HitObject = {
 
 type SongInfo = Record<string, string | number>;
 
-type MapLoaderProps = {
-  mapPath?: string;
-  mapFileName?: string;
-};
-
-const MapLoader = ({ 
-  mapPath = './beatmapsRaw/2329509/', 
-  mapFileName = "KURORYU vs. Dispel - Miserea (-[ Peachy ]-) [Draft vs. Stelar's 4K Hard].osu"
-}: MapLoaderProps) => {
+const MapLoader = () => {
   const [hitObjects, setHitObjects] = useState<HitObject[] | null>(null);
   const [songInfo, setSongInfo] = useState<SongInfo | null>(null);
+  const location = useLocation();
+  const { beatmapId, beatmapName } = location.state;
+
+  const mapPath = `./beatmapsRaw/${beatmapId}/`;
+  const mapFileName = `${beatmapName}.osu`;
 
   useEffect(() => {
     const theMap = mapPath + mapFileName;
@@ -33,7 +31,7 @@ const MapLoader = ({
     };
 
     loadMap();
-  }, [mapPath, mapFileName]);
+  }, [beatmapId, beatmapName, mapPath, mapFileName]);
 
   const getHitObjects = (fileString: string): HitObject[] => {
     const lines = fileString.split('\n');

@@ -37,7 +37,7 @@ const UploadBeatmap = () => {
   };
 
   return (
-    <div className="mt-6 flex flex-col items-center gap-2 text-white">
+    <div className="mt-2 flex flex-col items-center gap-2 text-white">
       <button
         onClick={handleButtonClick}
         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded transition-colors"

@@ -6,6 +6,7 @@ import multer from 'multer';
 import unzipper from 'unzipper';
 import path from 'path';
 import fs from 'fs';
+import fg from 'fast-glob';
 import { pipeline } from 'stream/promises';
 import connectDB from './config';
 
@@ -14,7 +15,7 @@ import {
 } from './interface';
 import { echo } from './echo';
 
-dotenv.config({ path: path.join(__dirname, '../ENVIRONMENTS.env') });
+dotenv.config();
 
 // Set up web app
 const app = express();
@@ -103,6 +104,23 @@ app.post('/api/beatmaps/upload', upload.single('beatmap'), async (req: Request, 
   } catch (error) {
     console.error('Beatmap upload failed:', error);
     res.status(500).json({ error: 'Failed to process beatmap archive' });
+  }
+});
+
+app.get('/api/beatmaps', async (req: Request, res: Response) => {
+  try {
+    const files = await fg('**/*.osu', { cwd: BEATMAPS_DIR, absolute: true });
+
+    const beatmaps = files.map(filePath => {
+      const id = path.basename(path.dirname(filePath));
+      const name = path.basename(filePath, '.osu');
+      return { id, name };
+    });
+
+    res.status(200).json(beatmaps);
+  } catch (error) {
+    console.error('Failed to fetch beatmaps:', error);
+    res.status(500).json({ error: 'Failed to fetch beatmaps' });
   }
 });
 
