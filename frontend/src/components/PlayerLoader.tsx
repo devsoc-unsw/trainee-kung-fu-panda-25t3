@@ -1,42 +1,6 @@
 import { useState, useEffect } from 'react';
 import Game from './Game';
-
-type HitObject = {
-  x: number;
-  y: number;
-  time: number;
-  type: number;
-  endTime?: number;
-};
-
-type SongInfo = Record<string, string | number>;
-
-type UserData = {
-  Keybinds: Record<string, string[]>;
-  ManiaWidth: Record<string, string>;
-  ManiaHeight: Record<string, string>;
-  ScrollSpeed: number;
-  ReceptorOffset: string;
-  BackgroundBlur: number;
-  BackgroundOpacity: number;
-  Accuracy: Record<string, number>;
-  Life: Record<string, number>;
-  Judgment: string;
-  MusicSpeed: number;
-  MusicVolume: number;
-  ScoreValues: Record<'Marvelous' | 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss', number>;
-  JudgementWindow: Record<
-    string,
-    {
-      Marvelous: number;
-      Perfect: number;
-      Great: number;
-      Good: number;
-      Okay: number;
-      Miss: number;
-    }
-  >;
-};
+import { type HitObject, type SongInfo, type UserData } from './CommonGame';
 
 type PlayerLoaderProps = {
   songInfo: SongInfo;
