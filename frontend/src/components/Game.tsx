@@ -9,6 +9,8 @@ import {
 import { Judger } from './Judger';
 import { ManiaRenderer } from './ManiaRenderer';
 import { TaikoRenderer } from './TaikoRenderer';
+import Pause from './Pause';
+import GameOver from './GameOver';
 
 type GameProps = {
   songInfo: SongInfo;
@@ -24,6 +26,9 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
   const pressedKeysRef = useRef<Set<string>>(new Set());
   const [progress, setProgress] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [isGameOver, setIsGameOver] = useState<boolean>(false);
+  const [completionPercent, setCompletionPercent] = useState<number>(0);
   const hasStartedRef = useRef<boolean>(false);
   const countdownIntervalRef = useRef<number | null>(null);
   const musicTime = useRef<HTMLAudioElement | null>(null);
@@ -83,20 +88,32 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
     }, 1000);
   }, []);
 
+  const handleUnpause = useCallback(() => {
+    const audio = musicTime.current;
+    if (audio && audio.paused) {
+      setIsPaused(false);
+      startCountdown();
+    }
+  }, [startCountdown]);
+
+  const handleQuit = useCallback(() => {
+    navigate('/select');
+  }, [navigate]);
+
   useEffect(() => {
-    if (life <= 0) {
+    if (life <= 0 && !isGameOver) {
       const audio = musicTime.current;
       const currentTimeMs = audio ? audio.currentTime * 1000 : currentTimeRef.current;
       const durationMs = audio && audio.duration ? audio.duration * 1000 : 0;
-      const completionPercent = durationMs > 0 ? (currentTimeMs / durationMs) * 100 : 0;
+      const percent = durationMs > 0 ? (currentTimeMs / durationMs) * 100 : 0;
       
-      navigate('/gameover', {
-        state: {
-          completionPercent: completionPercent,
-        },
-      });
+      setIsGameOver(true);
+      setCompletionPercent(percent);
+      if (audio) {
+        audio.pause();
+      }
     }
-  }, [life, navigate]);
+  }, [life, isGameOver]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     const key = normaliseKey(event);
@@ -105,9 +122,11 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
       const audio = musicTime.current;
       if (audio) {
         if (audio.paused) {
+          setIsPaused(false);
           startCountdown();
         } else {
           audio.pause();
+          setIsPaused(true);
           setCountdown(null);
           if (countdownIntervalRef.current) {
             clearInterval(countdownIntervalRef.current);
@@ -292,6 +311,8 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
           />
         </div>
       </main>
+      <Pause open={isPaused} onClose={handleUnpause} onQuit={handleQuit} />
+      <GameOver open={isGameOver} completionPercent={completionPercent} />
       <Keypresses onKeyDown={handleKeyDown} onKeyUp={handleKeyUp} />
     </>
   )
