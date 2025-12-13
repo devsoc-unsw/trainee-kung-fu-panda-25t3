@@ -21,6 +21,7 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
+  const pressedKeysRef = useRef<Set<string>>(new Set());
   const [progress, setProgress] = useState<number>(0);
   const musicTime = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -62,12 +63,17 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
   }, [life, navigate]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    let key = event.key.toLowerCase();
-    if (key === ' ') {
-      key = 'space';
+    let key: string;
+    if (event.code.startsWith('Numpad')) {
+      key = event.code;
+    } else {
+      key = event.key.toLowerCase();
+      if (key === ' ') {
+        key = 'space';
+      }
     }
 
-    if (key === 'escape') {
+    if (key.toLowerCase() === 'escape') {
       const audio = musicTime.current;
       if (audio) {
         if (audio.paused) audio.play();
@@ -76,13 +82,17 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
       return;
     }
 
-    setPressedKeys(prev => new Set(prev).add(key));
+    setPressedKeys(prev => {
+      const newSet = new Set(prev).add(key);
+      pressedKeysRef.current = newSet;
+      return newSet;
+    });
 
     const isTaikoMode = songInfo['Mode'] === 1 || songInfo['Mode'] === '1';
 
     if (isTaikoMode) {
       const taikoKeybinds = userData.Keybinds['taiko'].map(k => k.toLowerCase());
-      const keyIndex = taikoKeybinds.indexOf(key);
+      const keyIndex = taikoKeybinds.indexOf(key.toLowerCase());
 
       if (keyIndex !== -1) {
         const now = musicTime.current ? musicTime.current.currentTime * 1000 : currentTimeRef.current;
@@ -92,8 +102,8 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
     } else {
       const circleSize = songInfo['CircleSize'];
       const maniaWidthKey = String(circleSize);
-      const keybinds = userData.Keybinds[maniaWidthKey].map(k => k.toLowerCase());
-      const column = keybinds.indexOf(key);
+      const keybinds = userData.Keybinds[maniaWidthKey];
+      const column = keybinds.findIndex(k => k.toLowerCase() === key.toLowerCase());
 
       if (column !== -1) {
         const now = musicTime.current ? musicTime.current.currentTime * 1000 : currentTimeRef.current;
@@ -103,13 +113,19 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
   }, [judgeHit, judgeTaiko, songInfo, userData, hitObjects]);
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
-    let key = event.key.toLowerCase();
-    if (key === ' ') {
-      key = 'space';
+    let key: string;
+    if (event.code.startsWith('Numpad')) {
+      key = event.code;
+    } else {
+      key = event.key.toLowerCase();
+      if (key === ' ') {
+        key = 'space';
+      }
     }
     setPressedKeys(prev => {
       const newKeys = new Set(prev);
       newKeys.delete(key);
+      pressedKeysRef.current = newKeys;
       return newKeys;
     });
   }, []);
@@ -171,6 +187,7 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
       judgedNotesRef,
       laneWidthPxRef,
       noteHeightPxRef,
+      pressedKeysRef,
       markMiss,
       resetJudging,
     });

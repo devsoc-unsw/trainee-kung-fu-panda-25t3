@@ -15,6 +15,7 @@ type RendererArgs = {
   judgedNotesRef: React.MutableRefObject<boolean[]>;
   laneWidthPxRef: React.MutableRefObject<number>;
   noteHeightPxRef: React.MutableRefObject<number>;
+  pressedKeysRef: React.MutableRefObject<Set<string>>;
   markMiss: (diffMs: number) => void;
   resetJudging: (noteCount: number) => void;
 };
@@ -33,6 +34,7 @@ export const ManiaRenderer = ({
   judgedNotesRef,
   laneWidthPxRef,
   noteHeightPxRef,
+  pressedKeysRef,
   markMiss,
   resetJudging,
 }: RendererArgs) => {
@@ -112,6 +114,34 @@ export const ManiaRenderer = ({
       const receptorOffsetPercent = parseFloat(userData.ReceptorOffset);
       const receptorOffsetPx = (receptorOffsetPercent / 100) * window.innerHeight;
       const receptorY = canvas.height - receptorOffsetPx;
+      
+      const circleSize = songInfo['CircleSize'];
+      const maniaWidthKey = String(circleSize);
+      const keybinds = userData.Keybinds[maniaWidthKey];
+      const pressedColumns = new Set<number>();
+      for (const key of pressedKeysRef.current) {
+        const column = keybinds.findIndex(k => k.toLowerCase() === key.toLowerCase());
+        if (column !== -1) {
+          pressedColumns.add(column);
+        }
+      }
+
+      for (const column of pressedColumns) {
+        const laneX = column * laneWidthPxRef.current;
+        const laneWidth = laneWidthPxRef.current;
+        const width = laneWidth * 0.9;
+        const x = laneX + (laneWidth - width) / 2;
+        const gradientStartY = canvas.height * 0.5;
+        const gradientEndY = canvas.height;
+        
+        const gradient = ctx.createLinearGradient(x, gradientStartY, x, gradientEndY);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.6)');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, gradientStartY, width, gradientEndY - gradientStartY);
+      }
+      
       ctx.fillStyle = '#444444';
       ctx.fillRect(0, receptorY, canvas.width, 2);
 
@@ -151,14 +181,33 @@ export const ManiaRenderer = ({
         const distanceFromCenter = Math.abs(column - centerPoint);
         const roundedDistance = Math.round(distanceFromCenter);
         
-        if (isOdd && roundedDistance === 0) {
-          ctx.fillStyle = '#CBA6F7';
-        } else if (roundedDistance % 2 === 1) {
-          ctx.fillStyle = '#F5C2E7';
+        if (numColumns >= 10) {
+          const middleCol1 = Math.floor(centerPoint);
+          const middleCol2 = Math.ceil(centerPoint);
+          if (column === middleCol1 || column === middleCol2) {
+            ctx.fillStyle = '#CBA6F7';
+          } else if (roundedDistance % 2 === 1) {
+            ctx.fillStyle = '#F5C2E7';
+          } else {
+            ctx.fillStyle = '#89B4FA';
+          }
         } else {
-          ctx.fillStyle = '#89B4FA';
+          if (isOdd && roundedDistance === 0) {
+            ctx.fillStyle = '#CBA6F7';
+          } else if (roundedDistance % 2 === 1) {
+            ctx.fillStyle = '#F5C2E7';
+          } else {
+            ctx.fillStyle = '#89B4FA';
+          }
         }
-        ctx.fillRect(x, y, laneWidthPxRef.current, noteHeightPxRef.current);
+        
+        const width = laneWidthPxRef.current;
+        const height = noteHeightPxRef.current;
+        const radius = Math.min(width, height) * 0.1;
+        
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, height, radius);
+        ctx.fill();
       }
 
       animationFrameRef.current = requestAnimationFrame(animate);
