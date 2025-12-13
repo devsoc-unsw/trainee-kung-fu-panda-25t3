@@ -12,10 +12,6 @@ const Navbar = () => {
           Song Select
         </Link>
 
-        <Link to="/gameover" className="cursor-pointer hover:underline">
-          Game Over
-        </Link>
-
         <Link to="/passedmap" className="cursor-pointer hover:underline">
           Passed Map
         </Link>
