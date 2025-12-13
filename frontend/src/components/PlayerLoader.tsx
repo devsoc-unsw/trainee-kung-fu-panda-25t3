@@ -1,42 +1,6 @@
 import { useState, useEffect } from 'react';
 import Game from './Game';
-
-type HitObject = {
-  x: number;
-  y: number;
-  time: number;
-  type: number;
-  endTime?: number;
-};
-
-type SongInfo = Record<string, string | number>;
-
-type UserData = {
-  Keybinds: Record<string, string[]>;
-  ManiaWidth: Record<string, string>;
-  ManiaHeight: Record<string, string>;
-  ScrollSpeed: number;
-  ReceptorOffset: string;
-  BackgroundBlur: number;
-  BackgroundOpacity: number;
-  Accuracy: Record<string, number>;
-  Life: Record<string, number>;
-  Judgment: string;
-  MusicSpeed: number;
-  MusicVolume: number;
-  ScoreValues: Record<'Marvelous' | 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss', number>;
-  JudgementWindow: Record<
-    string,
-    {
-      Marvelous: number;
-      Perfect: number;
-      Great: number;
-      Good: number;
-      Okay: number;
-      Miss: number;
-    }
-  >;
-};
+import { type HitObject, type SongInfo, type UserData } from './CommonGame';
 
 type PlayerLoaderProps = {
   songInfo: SongInfo;
@@ -66,6 +30,7 @@ const PlayerLoader = ({ songInfo, hitObjects, mapPath }: PlayerLoaderProps) => {
         '16': ['s', 'd', 'f', 'g', 'x', 'c', 'v', 'b', 'space', 'Numpad0', 'Numpad4', 'Numpad5', 'Numpad6', 'NumpadAdd', 'Numpad1', 'Numpad2'],
         '18': ['s', 'd', 'f', 'g', 'x', 'c', 'v', 'b', 'space', 'Numpad0', 'Numpad4', 'Numpad5', 'Numpad6', 'NumpadAdd', 'Numpad1', 'Numpad2', 'Numpad3'],
         '20': ['s', 'd', 'f', 'g', 't', 'x', 'c', 'v', 'b', 'space', 'Numpad0', 'Numpad4', 'Numpad5', 'Numpad6', 'Numpad7', 'NumpadAdd', 'Numpad1', 'Numpad2', 'Numpad3'],
+        'taiko': ['d', 'f', 'j', 'k'],
       },
       ManiaWidth: {
         '1': '12.70',
@@ -102,7 +67,9 @@ const PlayerLoader = ({ songInfo, hitObjects, mapPath }: PlayerLoaderProps) => {
         '20': '4.00',
       },
       ScrollSpeed: 2.5,
+      TaikoScrollSpeed: 1.2,
       ReceptorOffset: '11.11',
+      TaikoReceptorOffset: '8',
       BackgroundBlur: 5,
       BackgroundOpacity: 0.6,
       JudgementWindow: {
