@@ -1,8 +1,13 @@
 import { Link } from "react-router-dom";
-import CD from "../../public/CD.svg";
+import { Button, IconButton } from "@mui/material";
+import FirstPageRoundedIcon from '@mui/icons-material/FirstPageRounded';
+import text from "../../public/song_select_text.svg";
 import '../App.css'; 
 import UploadBeatmap from "./UploadBeatmap";
 import { useState, useEffect } from "react";
+import useSound from "use-sound";
+import buttonHover1 from "../../public/sounds/button_hover_1.wav";
+import buttonClick1 from "../../public/sounds/button_click_1.wav";
 
 const backendUrl = 'http://localhost:5000';
 
@@ -13,6 +18,8 @@ type Beatmap = {
 
 const SongSelect = () => {  
   const [beatmaps, setBeatmaps] = useState<Beatmap[]>([]);
+  const [playHoverSound] = useSound(buttonHover1);
+  const [playClickSound] = useSound(buttonClick1);
 
   useEffect(() => {
     fetchBeatmaps();
@@ -35,28 +42,40 @@ const SongSelect = () => {
   return (
     <>
       <main className="flex flex-col justify-center items-center w-screen h-screen text-[#FFFFFF]">
-
-        <span className="text-3xl">Select a song!</span>
-
         {/* use maploader to parse the data */}
-        <div className="flex flex-col w-full h-[70%] overflow-y-auto text-center gap-2 mt-5">
+        <div className="flex flex-col w-full h-[70%] w-[85%] overflow-y-auto text-left gap-2 mt-5">
           {beatmaps.map((beatmap, i) => (
             <Link
               key={i}
               to="/game"
               state={{ beatmapId: beatmap.id, beatmapName: beatmap.name }}
-              className="cursor-pointer hover:underline"
+              className="cursor-pointer hover:underline hover:text-[#934AB3]"
+              onMouseEnter={() => playHoverSound()}
+              onClick={() => playClickSound()}
             >
               {beatmap.name}
             </Link>
           ))}
         </div>
 
-        <img src={CD} alt="" />
+        <img 
+          src={text} 
+          alt="Text saying 'Select your song!' on the right hand side" 
+          className="fixed right-0 top-1/2 -translate-y-1/2 w-1/2"
+        />
 
         {/* this button is temporary, u make it look nicer later */}
         <UploadBeatmap />
 
+        <IconButton aria-label="back" 
+          href="/"
+          sx={{
+            backgroundColor: '#934AB3',
+            marginTop: 1,
+            color: 'white','&:hover': {backgroundColor: 'secondary.dark'}
+          }}>
+            <FirstPageRoundedIcon />
+        </IconButton>
       </main>
     </>
   )
