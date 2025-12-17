@@ -1,9 +1,10 @@
 // import React from "react";
-import { Button, Modal, Slider, Typography } from "@mui/material";
+import { Modal, Slider, Typography } from "@mui/material";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 // import VolumeMuteIcon from "@mui/icons-material/VolumeMute";
 // import { useState, useEffect, useRef } from "react";
 // import PlayerLoader from "./PlayerLoader";
+import "./Settings.css";
 import MenuButton from "./MenuButton";
 
 type SettingsProps = {
@@ -42,7 +43,37 @@ const Settings = ({ open, onClose }: SettingsProps) => {
           </div>
           <div>
             <Typography>Keyboard</Typography>
-            <Button>keybinds</Button>
+            <div>
+              <div>
+                4k
+                <div className="flex justify-center place-items-center">
+                  <div className="keyBox" tabIndex={0}>
+                    spc
+                  </div>
+                  <div className="keyBox" tabIndex={0}>
+                    f
+                  </div>
+                  <div className="keyBox" tabIndex={0}>
+                    j
+                  </div>
+                  <div className="keyBox" tabIndex={0}>
+                    k
+                  </div>
+                </div>
+              </div>
+              <div>
+                7k
+                <div className="flex justify-center place-items-center">
+                  <div className="keyBox" tabIndex={0}></div>
+                  <div className="keyBox" tabIndex={0}></div>
+                  <div className="keyBox" tabIndex={0}></div>
+                  <div className="keyBox" tabIndex={0}></div>
+                  <div className="keyBox" tabIndex={0}></div>
+                  <div className="keyBox" tabIndex={0}></div>
+                  <div className="keyBox" tabIndex={0}></div>
+                </div>
+              </div>
+            </div>
           </div>
           <div>
             <Typography>Gameplay</Typography>
