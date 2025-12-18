@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Button, IconButton } from "@mui/material";
+import { IconButton, Box } from "@mui/material";
 import FirstPageRoundedIcon from '@mui/icons-material/FirstPageRounded';
 import { GiDrumKit, GiGrandPiano } from "react-icons/gi";
 import { VscWarning } from "react-icons/vsc";
@@ -119,21 +119,22 @@ const SongSelect = () => {
         <img 
           src={text} 
           alt="Text saying 'Select your song!' on the right hand side" 
-          className="fixed right-0 top-1/2 -translate-y-1/2 w-1/2"
+          className="fixed right-20 w-1/2 translate-y-[-50px]"
         />
 
         {/* this button is temporary, u make it look nicer later */}
-        <UploadBeatmap />
-
-        <IconButton aria-label="back" 
-          href="/"
-          sx={{
-            backgroundColor: '#934AB3',
-            marginTop: 1,
-            color: 'white','&:hover': {backgroundColor: 'secondary.dark'}
-          }}>
-            <FirstPageRoundedIcon />
-        </IconButton>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <IconButton aria-label="back" 
+            href="/"
+            sx={{
+              backgroundColor: '#934AB3',
+              marginTop: 1,
+              color: 'white','&:hover': {backgroundColor: '#6A2C85'}
+            }}>
+              <FirstPageRoundedIcon />
+          </IconButton>
+          <UploadBeatmap />
+        </Box>
       </main>
     </>
   )

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Settings from "./Settings";
 import MenuButton from "./MenuButton";
+import logo from "../../public/not_osu_logo.svg";
 
 const StartMenu = () => {
   const [openSettings, setOpenSettings] = useState(false);
@@ -10,7 +11,11 @@ const StartMenu = () => {
   return (
     <>
       <main className="flex flex-col justify-center items-center w-screen h-screen gap-3 text-[#FFFFFF]">
-        <span className="text-4xl">Not Osu!</span>
+        <img 
+          src={logo} 
+          alt="Not~Osu! start screen logo" 
+          style={{ height: "auto", width: "30%" }}
+        />
         <MenuButton onClick={() => navigate("/select")}>Start!</MenuButton>
         <MenuButton onClick={handleOpenSettings}>Settings</MenuButton>
         {/* all the settings are in playerloader.tsx but it could be split into more components */}

@@ -1,3 +1,5 @@
+import Button from '@mui/material/Button';
+import LibraryMusicIcon from '@mui/icons-material/LibraryMusic';
 import { useRef } from 'react';
 
 const backendUrl = 'http://localhost:5000'; // change this when deploying to vercel
@@ -38,15 +40,20 @@ const UploadBeatmap = () => {
 
   return (
     <div className="mt-2 flex flex-col items-center gap-2 text-white">
-      <button
+      <Button
         onClick={handleButtonClick}
-        className="px-4 py-2 rounded transition-colors"
-        style={{ backgroundColor: '#934AB3', color: '#11111B' }}
-        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6A2C85'}
-        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#934AB3'}
+        variant="contained"
+        startIcon={<LibraryMusicIcon />}
+        sx={{
+          backgroundColor: '#934AB3',
+          color: 'white',
+          '&:hover': {
+            backgroundColor: '#6A2C85',
+          },
+        }}
       >
         Upload Beatmap (.osz)
-      </button>
+      </Button>
       <input
         ref={inputRef}
         type="file"
