@@ -81,7 +81,6 @@ const SongSelect = () => {
   return (
     <>
       <main className="flex flex-col justify-center items-center w-screen h-screen text-[#FFFFFF]">
-        {/* use maploader to parse the data */}
         <div className="flex flex-col w-full h-[70%] w-[85%] overflow-y-auto text-left gap-2 mt-5">
           {beatmaps.map((beatmap, i) => (
             <Link
@@ -90,7 +89,7 @@ const SongSelect = () => {
               state={{ beatmapId: beatmap.id, beatmapName: beatmap.name }}
               className="cursor-pointer hover:underline hover:text-[#934AB3] flex items-center gap-3"
               onMouseEnter={() => handleMouseEnter(beatmap)}
-              onClick={() => playClickSound()}
+              onClick={() => { playClickSound(); audioRef.current?.pause(); audioRef.current = null; audioPathRef.current = null; }}
             >
               <span className="text-[3vh] flex items-center justify-center gap-1">
                 {beatmap.songInfo.Mode === 1 && <GiDrumKit />}
