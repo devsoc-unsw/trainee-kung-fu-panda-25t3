@@ -2,12 +2,13 @@
 import { Modal, Slider, Typography } from "@mui/material";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 // import VolumeMuteIcon from "@mui/icons-material/VolumeMute";
-// import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 // import PlayerLoader from "./PlayerLoader";
 import "./Settings.css";
 import MenuButton from "./MenuButton";
-// import { type UserData } from "./CommonGame";
+import { type UserData } from "./CommonGame";
 // import InitUserData from "./InitUserData";
+import KeybindSet from "./KeybindSet";
 
 type SettingsProps = {
   open: boolean;
@@ -15,14 +16,21 @@ type SettingsProps = {
 };
 
 const Settings = ({ open, onClose }: SettingsProps) => {
-  const keybindButtonFocus = () => {
-    console.log("is active");
-  };
+  const [userData, setUserData] = useState<UserData | null>(null);
+  useEffect(() => {
+    const stored = localStorage.getItem("userData");
+    if (stored) {
+      setUserData(JSON.parse(stored));
+    }
+  }, []);
 
-  const keybindButtonBlur = () => {
-    console.log("is blur");
-  };
+  useEffect(() => {
+    if (userData) {
+      localStorage.setItem("userData", JSON.stringify(userData));
+    }
+  }, [userData]);
 
+  if (!userData) return null;
   return (
     <Modal open={open} onClose={onClose}>
       <div className="flex flex-col justify-center items-center w-screen h-screen gap-3 text-[#FFFFFF]">
@@ -57,35 +65,29 @@ const Settings = ({ open, onClose }: SettingsProps) => {
               <div>
                 4k
                 <div className="flex justify-center place-items-center">
-                  <div
-                    className="keyBox"
-                    tabIndex={0}
-                    onFocus={keybindButtonFocus}
-                    onBlur={keybindButtonBlur}
-                  >
-                    spc
-                  </div>
-                  <div className="keyBox" tabIndex={0}>
-                    f
-                  </div>
-                  <div className="keyBox" tabIndex={0}>
-                    j
-                  </div>
-                  <div className="keyBox" tabIndex={0}>
-                    k
-                  </div>
+                  {userData.Keybinds["4"].map((_, idx) => (
+                    <KeybindSet
+                      key={idx}
+                      keysNum={4}
+                      keysIndex={idx}
+                      userData={userData}
+                      setUserData={setUserData}
+                    />
+                  ))}
                 </div>
               </div>
               <div>
                 7k
                 <div className="flex justify-center place-items-center">
-                  <div className="keyBox" tabIndex={0}></div>
-                  <div className="keyBox" tabIndex={0}></div>
-                  <div className="keyBox" tabIndex={0}></div>
-                  <div className="keyBox" tabIndex={0}></div>
-                  <div className="keyBox" tabIndex={0}></div>
-                  <div className="keyBox" tabIndex={0}></div>
-                  <div className="keyBox" tabIndex={0}></div>
+                  {userData.Keybinds["7"].map((_, idx) => (
+                    <KeybindSet
+                      key={idx}
+                      keysNum={7}
+                      keysIndex={idx}
+                      userData={userData}
+                      setUserData={setUserData}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
