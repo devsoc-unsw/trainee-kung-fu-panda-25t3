@@ -51,12 +51,24 @@ const Settings = ({ open, onClose }: SettingsProps) => {
                   setUserData={setUserData}
                 />
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
                 <div className="text-xl">Keyboard</div>
+                <div className="p-3">
+                  taiko
+                  <div className="keyBindContainer">
+                    {userData.Keybinds.taiko.map((_, idx) => (
+                      <KeybindSet
+                        keysIndex={idx}
+                        userData={userData}
+                        setUserData={setUserData}
+                      />
+                    ))}
+                  </div>
+                </div>
                 <div>
                   <div className="p-3">
                     4k
-                    <div className="flex justify-center place-items-center">
+                    <div className="keyBindContainer">
                       {userData.Keybinds["4"].map((_, idx) => (
                         <KeybindSet
                           keysNum={4}
@@ -69,7 +81,7 @@ const Settings = ({ open, onClose }: SettingsProps) => {
                   </div>
                   <div className="p-3">
                     7k
-                    <div className="flex justify-center place-items-center">
+                    <div className="keyBindContainer">
                       {userData.Keybinds["7"].map((_, idx) => (
                         <KeybindSet
                           keysNum={7}
@@ -82,7 +94,7 @@ const Settings = ({ open, onClose }: SettingsProps) => {
                   </div>
                   <div className="p-3">
                     10k
-                    <div className="flex justify-center place-items-center">
+                    <div className="keyBindContainer">
                       {userData.Keybinds["10"].map((_, idx) => (
                         <KeybindSet
                           keysNum={10}
