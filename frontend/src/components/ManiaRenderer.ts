@@ -142,7 +142,7 @@ export const ManiaRenderer = ({
         ctx.fillRect(x, gradientStartY, width, gradientEndY - gradientStartY);
       }
       
-      ctx.fillStyle = '#11111B';
+      ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, receptorY, canvas.width, 2);
 
       ctx.fillStyle = '#FFFFFF';
