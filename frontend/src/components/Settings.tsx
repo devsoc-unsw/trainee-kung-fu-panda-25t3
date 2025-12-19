@@ -1,14 +1,14 @@
 // import React from "react";
-import { Modal, Slider, Typography } from "@mui/material";
+import { Modal, Slider, Typography, IconButton, Slide } from "@mui/material";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 // import VolumeMuteIcon from "@mui/icons-material/VolumeMute";
 import { useState, useEffect } from "react";
 // import PlayerLoader from "./PlayerLoader";
 import "./Settings.css";
-import MenuButton from "./MenuButton";
 import { type UserData } from "./CommonGame";
 // import InitUserData from "./InitUserData";
 import KeybindSet from "./KeybindSet";
+import CloseIcon from "@mui/icons-material/Close";
 
 type SettingsProps = {
   open: boolean;
@@ -32,74 +32,112 @@ const Settings = ({ open, onClose }: SettingsProps) => {
 
   if (!userData) return null;
   return (
-    <Modal open={open} onClose={onClose}>
-      <div className="flex flex-col justify-center items-center w-screen h-screen gap-3 text-[#FFFFFF]">
-        <div className="flex flex-col bg-stone-900 bg-opacity-80 rounded-xl w-[500px] h-[600px] p-8 gap-4">
-          <div className="flex justify-center text-xl">Settings</div>
-          <div className="flex flex-col gap-3">
-            <div className="flex w-full items-center gap-4">
-              <div className="w-[50px]">
-                <Typography>Master</Typography>
+    <Modal open={open} onClose={onClose} closeAfterTransition>
+      <Slide in={open} direction="up" timeout={300}>
+        <div className="settingsPage">
+          <div className="flex flex-col bg-stone-900 bg-opacity-90 rounded-xl w-[600px] h-[800px] p-8 gap-4">
+            <div className="flex items-center text-xl">
+              <div>Setting</div>
+              <div className="ml-auto">
+                <IconButton sx={{ color: "white" }} onClick={onClose}>
+                  <CloseIcon></CloseIcon>
+                </IconButton>
               </div>
-              <VolumeUpIcon></VolumeUpIcon>
-              <Slider></Slider>
             </div>
-            <div className="flex w-full gap-3">
-              <div className="w-[60px]">
-                <Typography>Music</Typography>
-              </div>
-              <VolumeUpIcon></VolumeUpIcon>
-              <Slider></Slider>
-            </div>
-            <div className="flex w-full gap-3">
-              <div className="w-[50px]">
-                <Typography>Sound</Typography>
-              </div>
-              <VolumeUpIcon></VolumeUpIcon>
-              <Slider></Slider>
-            </div>
-          </div>
-          <div>
-            <Typography>Keyboard</Typography>
-            <div>
-              <div>
-                4k
-                <div className="flex justify-center place-items-center">
-                  {userData.Keybinds["4"].map((_, idx) => (
-                    <KeybindSet
-                      key={idx}
-                      keysNum={4}
-                      keysIndex={idx}
-                      userData={userData}
-                      setUserData={setUserData}
-                    />
-                  ))}
+            <div className="flex flex-col gap-3 overflow-auto">
+              <div className="flex flex-col gap-3">
+                <div className="volumeContainer">
+                  <div className="volumeLabel">Master</div>
+                  <div>
+                    <VolumeUpIcon></VolumeUpIcon>
+                  </div>
+                  <div className="flex-1">
+                    <Slider color="secondary"></Slider>
+                  </div>
+                </div>
+                <div className="volumeContainer">
+                  <div className="volumeLabel">Music</div>
+                  <div>
+                    <VolumeUpIcon></VolumeUpIcon>
+                  </div>
+                  <div className="flex-1">
+                    <Slider color="secondary"></Slider>
+                  </div>
+                </div>
+                <div className="volumeContainer">
+                  <div className="volumeLabel">Sound</div>
+                  <div>
+                    <VolumeUpIcon></VolumeUpIcon>
+                  </div>
+                  <div className="flex-1">
+                    <Slider color="secondary"></Slider>
+                  </div>
                 </div>
               </div>
               <div>
-                7k
-                <div className="flex justify-center place-items-center">
-                  {userData.Keybinds["7"].map((_, idx) => (
-                    <KeybindSet
-                      key={idx}
-                      keysNum={7}
-                      keysIndex={idx}
-                      userData={userData}
-                      setUserData={setUserData}
-                    />
-                  ))}
+                <Typography>Keyboard</Typography>
+                <div>
+                  <div>
+                    4k
+                    <div className="flex justify-center place-items-center">
+                      {userData.Keybinds["4"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={4}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    7k
+                    <div className="flex justify-center place-items-center">
+                      {userData.Keybinds["7"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={7}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    10k
+                    <div className="flex justify-center place-items-center">
+                      {userData.Keybinds["10"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={10}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    20k
+                    <div className="flex justify-center place-items-center">
+                      {userData.Keybinds["20"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={20}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
+              <div>
+                <Typography>Gameplay</Typography>
+              </div>
             </div>
-          </div>
-          <div>
-            <Typography>Gameplay</Typography>
-          </div>
-          <div className="flex mt-auto justify-center">
-            <MenuButton onClick={onClose}>close awesome settings</MenuButton>
           </div>
         </div>
-      </div>
+      </Slide>
     </Modal>
   );
 };

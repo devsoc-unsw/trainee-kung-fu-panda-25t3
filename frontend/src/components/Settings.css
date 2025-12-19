@@ -18,3 +18,63 @@
   border-color: oklch(94.5% 0.129 101.54);
   color: oklch(94.5% 0.129 101.54); /* yellow-200 */
 }
+
+.settingsPage {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  gap: 0.75rem;
+  color: #ffffff;
+
+}
+
+.settingsPanel {
+  display: flex;
+  flex-direction: column;
+  background-color: rgb(28 25 23 / 0.9); /* stone-900 90% */
+  border-radius: 0.75rem; 
+  width: 600px;
+  height: 800px;
+  padding: 2rem; 
+  gap: 1rem;    
+}
+
+.volumeLabel {
+  width: 60px;
+}
+
+.volumeContainer {
+  display: flex;
+  width: 100%;
+  /* align-items: center; */
+  gap: 1rem;
+}
+
+/*
+Source - https://stackoverflow.com/a
+Posted by Sagar Roy
+Retrieved 2025-12-19, License - CC BY-SA 4.0
+*/
+
+/* For Firefox Browser */
+.scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #000 #fff;
+}
+
+
+/* For Chrome, EDGE, Opera, Others */
+/* .scrollbar::-webkit-scrollbar {
+  width: 20px;
+}
+
+.scrollbar::-webkit-scrollbar-track { 
+  background: #fff;
+}
+
+.scrollbar::-webkit-scrollbar-thumb { 
+  background:#000;
+} */

@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, useEffect } from "react";
+// import { useState, useEffect } from "react";
 import "./Settings.css";
 import { type UserData } from "./CommonGame";
 
@@ -10,13 +10,33 @@ type KeybindSetProps = {
   setUserData: React.Dispatch<React.SetStateAction<UserData | null>>;
 };
 
+function formatKey(key: string) {
+  if (!key.startsWith("Numpad")) return key.toLowerCase();
+
+  const map: Record<string, string> = {
+    Add: "+",
+    Subtract: "-",
+    Multiply: "*",
+    Divide: "/",
+    Decimal: ".",
+    Enter: "enter",
+  };
+
+  const rest = key.slice(6); // after "Numpad"
+  return "N" + (map[rest] ?? rest.toLowerCase());
+}
+
 const KeybindSet = ({
   keysNum,
   keysIndex,
   userData,
   setUserData,
 }: KeybindSetProps) => {
-  const key = userData?.Keybinds[String(keysNum)]?.[keysIndex] ?? null;
+  let key = userData?.Keybinds[String(keysNum)]?.[keysIndex] ?? null;
+
+  if (key) {
+    key = formatKey(key);
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -41,7 +61,7 @@ const KeybindSet = ({
 
   return (
     <div className="keyBox" tabIndex={0} onKeyDown={handleKeyDown}>
-      {key}
+      {key === "space" ? "Spc" : key}
     </div>
   );
 };
