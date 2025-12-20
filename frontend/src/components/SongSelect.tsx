@@ -87,7 +87,7 @@ const SongSelect = () => {
 
   return (
     <>
-      <main className="flex flex-col items-center w-screen h-screen text-[#FFFFFF]">
+      <main className="flex flex-col items-center w-screen h-screen text-[#FFFFFF] pl-4">
         <div className="flex w-full justify-end items-center h-15 p-4 gap-4">
           <ToggleButtonGroup
             value={mode}
@@ -100,7 +100,8 @@ const SongSelect = () => {
             <ToggleButton 
               value="Mania" 
               aria-label="mania"
-              sx={{ 
+              sx={{
+                transition: "all 0.6s ease",
                 "&.Mui-selected": {
                   backgroundColor: "#6A2C85",
                     "&:hover": {
@@ -116,7 +117,8 @@ const SongSelect = () => {
             <ToggleButton 
               value="Taiko" 
               aria-label="taiko" 
-              sx={{ 
+              sx={{
+                transition: "all 0.6s ease",
                 "&.Mui-selected": {
                   backgroundColor: "#6A2C85",
                     "&:hover": {
@@ -169,9 +171,10 @@ const SongSelect = () => {
             }}
           />
         </div>
-        
-        <div className="flex flex-col w-full h-[80%] overflow-y-auto text-left gap-2 relative">
-          {beatmaps
+
+        <div className="flex flex-col w-full h-[80%] relative">
+          <div className="flex flex-col w-full h-full overflow-y-auto text-left gap-2 custom-scrollbar">
+                      {beatmaps
             .filter((beatmap) => 
               !mode || 
               (mode === "Mania" && beatmap.songInfo.Mode === 3) || 
@@ -199,7 +202,7 @@ const SongSelect = () => {
                 key={i}
                 to="/game"
                 state={{ beatmapId: beatmap.id, beatmapName: beatmap.name }}
-                className="cursor-pointer hover:underline hover:text-[#934AB3] flex items-center gap-3"
+                className="cursor-pointer hover:underline hover:text-[#934AB3] flex items-center gap-3 w-full pl-4 rounded-r-full hover:bg-purple-500/10 transition-all duration-[600ms]"
                 onMouseEnter={() => handleMouseEnter(beatmap)}
                 onClick={() => { playClickSound(); audioRef.current?.pause(); audioRef.current = null; audioPathRef.current = null; }}
               >
@@ -226,6 +229,23 @@ const SongSelect = () => {
                 </span>
               </Link>
           ))}
+        </div>
+
+        {/* Top gradient overlay - only covers mapped items */}
+        <div 
+          className="absolute top-0 left-0 w-full h-20 pointer-events-none z-10"
+          style={{
+            background: 'linear-gradient(to bottom, #11111b, transparent)'
+          }}
+        />
+
+        {/* Bottom gradient overlay - only covers mapped items */}
+        <div 
+          className="absolute bottom-0 left-0 w-full h-20 pointer-events-none z-10"
+          style={{
+            background: 'linear-gradient(to top, #11111b, transparent)'
+          }}
+        />
 
           <div className="absolute w-full h-full flex items-center pointer-events-none">
             <img 
@@ -241,7 +261,9 @@ const SongSelect = () => {
             sx={{
               backgroundColor: '#934AB3',
               marginTop: 1,
-              color: 'white','&:hover': {backgroundColor: '#6A2C85'}
+              color: 'white',
+              transition: "all 0.6s ease",
+              '&:hover': {backgroundColor: '#6A2C85'}
             }}
             onClick={() => { navigate("/"); audioRef.current?.pause(); audioRef.current = null; audioPathRef.current = null; }}>
               <FirstPageRoundedIcon />
