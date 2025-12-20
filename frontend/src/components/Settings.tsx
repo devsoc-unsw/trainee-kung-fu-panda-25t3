@@ -26,11 +26,21 @@ const JudgementWindows = [
 ];
 
 const defaultScrollSpeed = 2.5;
+const defaultTaikoScrollSpeed = 1.2;
+const defaultReceptorOffset = 11.11;
+const defaultTaikoReceptorOffset = 25;
+const defaultBackgroundBlur = 5;
+const defaultBackgroundOpacity = 0.6;
 
 const Settings = ({ open, onClose }: SettingsProps) => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [judgementWindowIndex, setJudgementWindowIndex] = useState<number>(3);
   const [scrollSpeed, setScrollSpeed] = useState<number>(defaultScrollSpeed);
+  const [taikoScrollSpeed, setTaikoScrollSpeed] = useState<number>(defaultTaikoScrollSpeed);
+  const [receptorOffset, setReceptorOffset] = useState<number>(defaultReceptorOffset);
+  const [taikoReceptorOffset, setTaikoReceptorOffset] = useState<number>(defaultTaikoReceptorOffset);
+  const [backgroundBlur, setBackgroundBlur] = useState<number>(defaultBackgroundBlur);
+  const [backgroundOpacity, setBackgroundOpacity] = useState<number>(defaultBackgroundOpacity);
 
   const changeScrollSpeed = (offset: number) => {
     let newOffset = scrollSpeed + offset;
@@ -42,6 +52,58 @@ const Settings = ({ open, onClose }: SettingsProps) => {
     setUserData((prev) =>
       prev ? { ...prev, ScrollSpeed: newOffset } : prev
     );
+  };
+
+  const changeTaikoScrollSpeed = (offset: number) => {
+    let newOffset = taikoScrollSpeed + offset;
+    if (newOffset < 0.1) {
+      newOffset = 0.1;
+    }
+    newOffset = Math.round(newOffset * 100) / 100;
+
+    setTaikoScrollSpeed(newOffset);
+  };
+
+  const changeReceptorOffset = (offset: number) => {
+    let newOffset = receptorOffset + offset;
+    if (newOffset < 0) {
+      newOffset = 0;
+    }
+    newOffset = Math.round(newOffset * 100) / 100;
+
+    setReceptorOffset(newOffset);
+  };
+
+  const changeTaikoReceptorOffset = (offset: number) => {
+    let newOffset = taikoReceptorOffset + offset;
+    if (newOffset < 0) {
+      newOffset = 0;
+    }
+    newOffset = Math.round(newOffset * 100) / 100;
+
+    setTaikoReceptorOffset(newOffset);
+  };
+
+  const changeBackgroundBlur = (offset: number) => {
+    let newOffset = backgroundBlur + offset;
+    if (newOffset < 0) {
+      newOffset = 0;
+    }
+    newOffset = Math.round(newOffset * 100) / 100;
+
+    setBackgroundBlur(newOffset);
+  };
+
+  const changeBackgroundOpacity = (offset: number) => {
+    let newOffset = backgroundOpacity + offset;
+    if (newOffset < 0) {
+      newOffset = 0;
+    } else if (newOffset > 1) {
+      newOffset = 1;
+    }
+    newOffset = Math.round(newOffset * 100) / 100;
+
+    setBackgroundOpacity(newOffset);
   };
 
   const changeJudgementIndex = (offset: number) => {
@@ -76,6 +138,76 @@ const Settings = ({ open, onClose }: SettingsProps) => {
     setJudgementWindowIndex(index !== -1 ? index : 3);
     setScrollSpeed(userData.ScrollSpeed);
   }, [userData]);
+
+  useEffect(() => {
+    if (userData?.TaikoScrollSpeed === undefined) return;
+
+    const speed = userData.TaikoScrollSpeed;
+
+    setTaikoScrollSpeed(speed);
+  }, [userData?.TaikoScrollSpeed]);
+
+  useEffect(() => {
+    setUserData((prev) =>
+      prev ? { ...prev, TaikoScrollSpeed: taikoScrollSpeed } : prev
+    );
+  }, [taikoScrollSpeed]);
+
+  useEffect(() => {
+    if (userData?.ReceptorOffset === undefined) return;
+
+    const offset = parseFloat(userData.ReceptorOffset);
+
+    setReceptorOffset(isNaN(offset) ? defaultReceptorOffset : offset);
+  }, [userData?.ReceptorOffset]);
+
+  useEffect(() => {
+    setUserData((prev) =>
+      prev ? { ...prev, ReceptorOffset: receptorOffset.toString() } : prev
+    );
+  }, [receptorOffset]);
+
+  useEffect(() => {
+    if (userData?.TaikoReceptorOffset === undefined) return;
+
+    const offset = parseFloat(userData.TaikoReceptorOffset);
+
+    setTaikoReceptorOffset(isNaN(offset) ? defaultTaikoReceptorOffset : offset);
+  }, [userData?.TaikoReceptorOffset]);
+
+  useEffect(() => {
+    setUserData((prev) =>
+      prev ? { ...prev, TaikoReceptorOffset: taikoReceptorOffset.toString() } : prev
+    );
+  }, [taikoReceptorOffset]);
+
+  useEffect(() => {
+    if (userData?.BackgroundBlur === undefined) return;
+
+    const blur = userData.BackgroundBlur;
+
+    setBackgroundBlur(blur);
+  }, [userData?.BackgroundBlur]);
+
+  useEffect(() => {
+    setUserData((prev) =>
+      prev ? { ...prev, BackgroundBlur: backgroundBlur } : prev
+    );
+  }, [backgroundBlur]);
+
+  useEffect(() => {
+    if (userData?.BackgroundOpacity === undefined) return;
+
+    const opacity = userData.BackgroundOpacity;
+
+    setBackgroundOpacity(opacity);
+  }, [userData?.BackgroundOpacity]);
+
+  useEffect(() => {
+    setUserData((prev) =>
+      prev ? { ...prev, BackgroundOpacity: backgroundOpacity } : prev
+    );
+  }, [backgroundOpacity]);
 
   if (!userData) return null;
   return (
@@ -119,8 +251,47 @@ const Settings = ({ open, onClose }: SettingsProps) => {
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <div className="p-3">4K</div>
+                  <div className="p-3">
+                    1k
+                    <div className="keyBindContainer">
+                      {userData.Keybinds["1"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={1}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    2k
+                    <div className="keyBindContainer">
+                      {userData.Keybinds["2"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={2}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    3k
+                    <div className="keyBindContainer">
+                      {userData.Keybinds["3"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={3}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    4k
                     <div className="keyBindContainer">
                       {userData.Keybinds["4"].map((_, idx) => (
                         <KeybindSet
@@ -132,8 +303,34 @@ const Settings = ({ open, onClose }: SettingsProps) => {
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <div className="p-3">7K</div>
+                  <div className="p-3">
+                    5k
+                    <div className="keyBindContainer">
+                      {userData.Keybinds["5"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={5}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    6k
+                    <div className="keyBindContainer">
+                      {userData.Keybinds["6"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={6}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    7k
                     <div className="keyBindContainer">
                       {userData.Keybinds["7"].map((_, idx) => (
                         <KeybindSet
@@ -145,8 +342,34 @@ const Settings = ({ open, onClose }: SettingsProps) => {
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <div className="p-3">10K</div>
+                  <div className="p-3">
+                    8k
+                    <div className="keyBindContainer">
+                      {userData.Keybinds["8"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={8}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    9k
+                    <div className="keyBindContainer">
+                      {userData.Keybinds["9"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={9}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    10k
                     <div className="keyBindContainer">
                       {userData.Keybinds["10"].map((_, idx) => (
                         <KeybindSet
@@ -158,8 +381,60 @@ const Settings = ({ open, onClose }: SettingsProps) => {
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <div className="p-3">20K</div>
+                  <div className="p-3">
+                    12k
+                    <div className="keyBindContainer">
+                      {userData.Keybinds["12"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={12}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    14k
+                    <div className="keyBindContainer">
+                      {userData.Keybinds["14"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={14}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    16k
+                    <div className="keyBindContainer">
+                      {userData.Keybinds["16"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={16}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    18k
+                    <div className="keyBindContainer">
+                      {userData.Keybinds["18"].map((_, idx) => (
+                        <KeybindSet
+                          keysNum={18}
+                          keysIndex={idx}
+                          userData={userData}
+                          setUserData={setUserData}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    20k
                     <div className="keyBindContainer">
                       {userData.Keybinds["20"].map((_, idx) => (
                         <KeybindSet
@@ -239,6 +514,410 @@ const Settings = ({ open, onClose }: SettingsProps) => {
                       {" "}
                       +1
                     </div>
+                  </div>
+                  <div className="p-3">Taiko Scroll Speed</div>
+                  <div className="flex gap-2 justify-center place-items-center">
+                    <div
+                      onClick={() => changeTaikoScrollSpeed(-1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -1
+                    </div>
+                    <div
+                      onClick={() => changeTaikoScrollSpeed(-0.5)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -0.5
+                    </div>
+                    <div
+                      onClick={() => changeTaikoScrollSpeed(-0.1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -0.1
+                    </div>
+                    <div>{taikoScrollSpeed}</div>
+                    <div
+                      onClick={() => changeTaikoScrollSpeed(0.1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +0.1
+                    </div>
+                    <div
+                      onClick={() => changeTaikoScrollSpeed(0.5)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +0.5
+                    </div>
+                    <div
+                      onClick={() => changeTaikoScrollSpeed(1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +1
+                    </div>
+                  </div>
+                  <div className="p-3">Receptor Offset</div>
+                  <div className="flex gap-2 justify-center place-items-center">
+                    <div
+                      onClick={() => changeReceptorOffset(-1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -1
+                    </div>
+                    <div
+                      onClick={() => changeReceptorOffset(-0.5)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -0.5
+                    </div>
+                    <div
+                      onClick={() => changeReceptorOffset(-0.1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -0.1
+                    </div>
+                    <div>{receptorOffset}</div>
+                    <div
+                      onClick={() => changeReceptorOffset(0.1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +0.1
+                    </div>
+                    <div
+                      onClick={() => changeReceptorOffset(0.5)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +0.5
+                    </div>
+                    <div
+                      onClick={() => changeReceptorOffset(1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +1
+                    </div>
+                  </div>
+                  <div className="p-3">Taiko Receptor Offset</div>
+                  <div className="flex gap-2 justify-center place-items-center">
+                    <div
+                      onClick={() => changeTaikoReceptorOffset(-1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -1
+                    </div>
+                    <div
+                      onClick={() => changeTaikoReceptorOffset(-0.5)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -0.5
+                    </div>
+                    <div
+                      onClick={() => changeTaikoReceptorOffset(-0.1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -0.1
+                    </div>
+                    <div>{taikoReceptorOffset}</div>
+                    <div
+                      onClick={() => changeTaikoReceptorOffset(0.1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +0.1
+                    </div>
+                    <div
+                      onClick={() => changeTaikoReceptorOffset(0.5)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +0.5
+                    </div>
+                    <div
+                      onClick={() => changeTaikoReceptorOffset(1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +1
+                    </div>
+                  </div>
+                  <div className="p-3">Background Blur</div>
+                  <div className="flex gap-2 justify-center place-items-center">
+                    <div
+                      onClick={() => changeBackgroundBlur(-1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -1
+                    </div>
+                    <div
+                      onClick={() => changeBackgroundBlur(-0.5)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -0.5
+                    </div>
+                    <div
+                      onClick={() => changeBackgroundBlur(-0.1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -0.1
+                    </div>
+                    <div>{backgroundBlur}</div>
+                    <div
+                      onClick={() => changeBackgroundBlur(0.1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +0.1
+                    </div>
+                    <div
+                      onClick={() => changeBackgroundBlur(0.5)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +0.5
+                    </div>
+                    <div
+                      onClick={() => changeBackgroundBlur(1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +1
+                    </div>
+                  </div>
+                  <div className="p-3">Background Opacity</div>
+                  <div className="flex gap-2 justify-center place-items-center">
+                    <div
+                      onClick={() => changeBackgroundOpacity(-0.1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -0.1
+                    </div>
+                    <div
+                      onClick={() => changeBackgroundOpacity(-0.05)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -0.05
+                    </div>
+                    <div
+                      onClick={() => changeBackgroundOpacity(-0.01)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      -0.01
+                    </div>
+                    <div>{backgroundOpacity}</div>
+                    <div
+                      onClick={() => changeBackgroundOpacity(0.01)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +0.01
+                    </div>
+                    <div
+                      onClick={() => changeBackgroundOpacity(0.05)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +0.05
+                    </div>
+                    <div
+                      onClick={() => changeBackgroundOpacity(0.1)}
+                      className="scrollSpeedAdjust"
+                    >
+                      {" "}
+                      +0.1
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1 mb-3">
+                <div className="text-xl font-bold">Mania Lane Dimensions</div>
+                <div className="p-3">
+                  <div className="text-sm mb-2 text-gray-300">Width</div>
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "12", "14", "16", "18", "20"].map((keyCount) => (
+                      <div key={`width-${keyCount}`} className="flex items-center gap-2">
+                        <label className="text-sm w-8">{keyCount}k:</label>
+                        <input
+                          type="number"
+                          min="0.1"
+                          max="100"
+                          step="0.01"
+                          value={userData.ManiaWidth[keyCount] || ""}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value) && value >= 0.1 && value <= 100) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaWidth: {
+                                        ...prev.ManiaWidth,
+                                        [keyCount]: value.toFixed(2),
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else if (e.target.value === "") {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaWidth: {
+                                        ...prev.ManiaWidth,
+                                        [keyCount]: "",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (isNaN(value) || value < 0.1) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaWidth: {
+                                        ...prev.ManiaWidth,
+                                        [keyCount]: "0.1",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else if (value > 100) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaWidth: {
+                                        ...prev.ManiaWidth,
+                                        [keyCount]: "100.00",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaWidth: {
+                                        ...prev.ManiaWidth,
+                                        [keyCount]: value.toFixed(2),
+                                      },
+                                    }
+                                  : prev
+                              );
+                            }
+                          }}
+                          className="w-20 px-2 py-1 bg-stone-800 text-white rounded border border-stone-600 focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-sm mb-2 text-gray-300">Height</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "12", "14", "16", "18", "20"].map((keyCount) => (
+                      <div key={`height-${keyCount}`} className="flex items-center gap-2">
+                        <label className="text-sm w-8">{keyCount}k:</label>
+                        <input
+                          type="number"
+                          min="0.1"
+                          max="100"
+                          step="0.01"
+                          value={userData.ManiaHeight[keyCount] || ""}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value) && value >= 0.1 && value <= 100) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaHeight: {
+                                        ...prev.ManiaHeight,
+                                        [keyCount]: value.toFixed(2),
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else if (e.target.value === "") {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaHeight: {
+                                        ...prev.ManiaHeight,
+                                        [keyCount]: "",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (isNaN(value) || value < 0.1) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaHeight: {
+                                        ...prev.ManiaHeight,
+                                        [keyCount]: "0.1",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else if (value > 100) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaHeight: {
+                                        ...prev.ManiaHeight,
+                                        [keyCount]: "100.00",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaHeight: {
+                                        ...prev.ManiaHeight,
+                                        [keyCount]: value.toFixed(2),
+                                      },
+                                    }
+                                  : prev
+                              );
+                            }
+                          }}
+                          className="w-20 px-2 py-1 bg-stone-800 text-white rounded border border-stone-600 focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
