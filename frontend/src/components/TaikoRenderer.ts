@@ -12,6 +12,7 @@ type TaikoRendererArgs = {
   currentTimeRef: React.MutableRefObject<number>;
   sortedTimesRef: React.MutableRefObject<number[] | null>;
   judgedNotesRef: React.MutableRefObject<boolean[]>;
+  pressedKeysRef: React.MutableRefObject<Set<string>>;
   markMiss: (diffMs: number) => void;
   resetJudging: (noteCount: number) => void;
 };
@@ -27,6 +28,7 @@ export const TaikoRenderer = ({
   currentTimeRef,
   sortedTimesRef,
   judgedNotesRef,
+  pressedKeysRef,
   markMiss,
   resetJudging,
 }: TaikoRendererArgs) => {
@@ -86,6 +88,50 @@ export const TaikoRenderer = ({
       ctx.beginPath();
       ctx.arc(receptorX, centerY, receptorRadius, 0, Math.PI * 2);
       ctx.stroke();
+
+      const pressedKeys = pressedKeysRef.current;
+      const taikoKeybinds = userData.Keybinds['taiko'];
+      
+      const pressedIndices = new Set<number>();
+      for (const key of pressedKeys) {
+        const keyLower = key.toLowerCase();
+        const index = taikoKeybinds.findIndex(k => k.toLowerCase() === keyLower);
+        if (index !== -1) {
+          pressedIndices.add(index);
+        }
+      }
+
+      const indicatorRadius = receptorRadius * 0.6;
+
+      if (pressedIndices.has(1)) {
+        ctx.fillStyle = '#EF4444';
+        ctx.beginPath();
+        ctx.arc(receptorX, centerY, indicatorRadius, Math.PI / 2, Math.PI * 1.5);
+        ctx.fill();
+      }
+      if (pressedIndices.has(0)) {
+        ctx.fillStyle = '#60A5FA';
+        ctx.beginPath();
+        ctx.arc(receptorX, centerY, receptorRadius, Math.PI / 2, Math.PI * 1.5, false);
+        ctx.arc(receptorX, centerY, indicatorRadius, Math.PI * 1.5, Math.PI / 2, true);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      if (pressedIndices.has(2)) {
+        ctx.fillStyle = '#EF4444';
+        ctx.beginPath();
+        ctx.arc(receptorX, centerY, indicatorRadius, -Math.PI / 2, Math.PI / 2);
+        ctx.fill();
+      }
+      if (pressedIndices.has(3)) {
+        ctx.fillStyle = '#60A5FA';
+        ctx.beginPath();
+        ctx.arc(receptorX, centerY, receptorRadius, -Math.PI / 2, Math.PI / 2, false);
+        ctx.arc(receptorX, centerY, indicatorRadius, Math.PI / 2, -Math.PI / 2, true);
+        ctx.closePath();
+        ctx.fill();
+      }
 
       const timesArr = sortedTimesRef.current || [];
       const judgedArr = judgedNotesRef.current || [];
@@ -167,6 +213,7 @@ export const TaikoRenderer = ({
     judgedNotesRef,
     markMiss,
     musicTimeRef,
+    pressedKeysRef,
     resetJudging,
     setCurrentTime,
     songInfo,
