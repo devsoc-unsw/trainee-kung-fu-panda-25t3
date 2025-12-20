@@ -216,6 +216,7 @@ const Game = ({ songInfo, userData, mapPath, hitObjects }: GameProps) => {
       currentTimeRef,
       sortedTimesRef,
       judgedNotesRef,
+      pressedKeysRef,
       markMiss,
       resetJudging,
     });
