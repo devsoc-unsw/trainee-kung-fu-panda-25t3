@@ -747,6 +747,180 @@ const Settings = ({ open, onClose }: SettingsProps) => {
                   </div>
                 </div>
               </div>
+
+              <div className="flex flex-col gap-1 mb-3">
+                <div className="text-xl font-bold">Mania Lane Dimensions</div>
+                <div className="p-3">
+                  <div className="text-sm mb-2 text-gray-300">Width</div>
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "12", "14", "16", "18", "20"].map((keyCount) => (
+                      <div key={`width-${keyCount}`} className="flex items-center gap-2">
+                        <label className="text-sm w-8">{keyCount}k:</label>
+                        <input
+                          type="number"
+                          min="0.1"
+                          max="100"
+                          step="0.01"
+                          value={userData.ManiaWidth[keyCount] || ""}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value) && value >= 0.1 && value <= 100) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaWidth: {
+                                        ...prev.ManiaWidth,
+                                        [keyCount]: value.toFixed(2),
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else if (e.target.value === "") {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaWidth: {
+                                        ...prev.ManiaWidth,
+                                        [keyCount]: "",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (isNaN(value) || value < 0.1) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaWidth: {
+                                        ...prev.ManiaWidth,
+                                        [keyCount]: "0.1",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else if (value > 100) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaWidth: {
+                                        ...prev.ManiaWidth,
+                                        [keyCount]: "100.00",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaWidth: {
+                                        ...prev.ManiaWidth,
+                                        [keyCount]: value.toFixed(2),
+                                      },
+                                    }
+                                  : prev
+                              );
+                            }
+                          }}
+                          className="w-20 px-2 py-1 bg-stone-800 text-white rounded border border-stone-600 focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-sm mb-2 text-gray-300">Height</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "12", "14", "16", "18", "20"].map((keyCount) => (
+                      <div key={`height-${keyCount}`} className="flex items-center gap-2">
+                        <label className="text-sm w-8">{keyCount}k:</label>
+                        <input
+                          type="number"
+                          min="0.1"
+                          max="100"
+                          step="0.01"
+                          value={userData.ManiaHeight[keyCount] || ""}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value) && value >= 0.1 && value <= 100) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaHeight: {
+                                        ...prev.ManiaHeight,
+                                        [keyCount]: value.toFixed(2),
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else if (e.target.value === "") {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaHeight: {
+                                        ...prev.ManiaHeight,
+                                        [keyCount]: "",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (isNaN(value) || value < 0.1) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaHeight: {
+                                        ...prev.ManiaHeight,
+                                        [keyCount]: "0.1",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else if (value > 100) {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaHeight: {
+                                        ...prev.ManiaHeight,
+                                        [keyCount]: "100.00",
+                                      },
+                                    }
+                                  : prev
+                              );
+                            } else {
+                              setUserData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      ManiaHeight: {
+                                        ...prev.ManiaHeight,
+                                        [keyCount]: value.toFixed(2),
+                                      },
+                                    }
+                                  : prev
+                              );
+                            }
+                          }}
+                          className="w-20 px-2 py-1 bg-stone-800 text-white rounded border border-stone-600 focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
               
             </div>
           </div>
