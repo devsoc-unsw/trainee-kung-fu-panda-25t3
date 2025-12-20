@@ -218,7 +218,7 @@ const SongSelect = () => {
                     {beatmap.songInfo.Title}
                   </span>
                   <span className="text-[1.8vh] block">
-                    {beatmap.songInfo.Artist}
+                    by {beatmap.songInfo.Artist}
                   </span>
                   <span className="font-bold text-[1.8vh] block">
                     {beatmap.songInfo.Version}
